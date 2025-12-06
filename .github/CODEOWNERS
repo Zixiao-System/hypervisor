@@ -1,0 +1,85 @@
+# CODEOWNERS file for hypervisor project
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# These owners will be the default owners for everything in the repo.
+# Unless a later match takes precedence, @Amiya167 and @HwlloChen will
+# be requested for review when someone opens a pull request.
+#
+# Order is important; the last matching pattern takes the most precedence.
+#
+# NOTE: Module assignment based on expertise:
+# - @Amiya167: Distributed systems, networking (OVS/DPDK), virtualization (libvirt/firecracker), cluster management
+# - @HwlloChen: Full-stack development (Vue.js, Go, Python, C++), CLI tools, web interfaces, CI/CD
+
+# ============================================================================
+# DEFAULT - Both maintainers
+# ============================================================================
+*                                   @Amiya167 @HwlloChen
+
+# ============================================================================
+# DEEP WATER ZONE - Amiya167 primary (distributed systems, low-level networking)
+# ============================================================================
+
+# Cluster management - distributed consensus, etcd
+/pkg/cluster/                       @Amiya167
+/pkg/cluster/etcd/                  @Amiya167
+/pkg/cluster/registry/              @Amiya167
+/pkg/cluster/heartbeat/             @Amiya167
+
+# Virtualization drivers - libvirt, firecracker, low-level hypervisor
+/pkg/compute/libvirt/               @Amiya167
+/pkg/compute/firecracker/           @Amiya167
+/clib/                              @Amiya167
+/clib/libvirt-wrapper/              @Amiya167
+
+# Future: Networking (OVS-DPDK) and Distributed Storage
+/pkg/network/                       @Amiya167
+/pkg/storage/                       @Amiya167
+
+# ============================================================================
+# SHARED ZONE - Both maintainers collaborate
+# ============================================================================
+
+# API definitions
+/api/                               @Amiya167 @HwlloChen
+
+# Compute driver interface and containerd
+/pkg/compute/driver/                @Amiya167 @HwlloChen
+/pkg/compute/containerd/            @Amiya167 @HwlloChen
+
+# Internal server and agent
+/internal/                          @Amiya167 @HwlloChen
+/internal/agent/                    @Amiya167 @HwlloChen
+/internal/server/                   @Amiya167 @HwlloChen
+
+# Configuration
+/configs/                           @Amiya167 @HwlloChen
+
+# Build system
+/Makefile                           @Amiya167 @HwlloChen
+/go.mod                             @Amiya167 @HwlloChen
+/go.sum                             @Amiya167 @HwlloChen
+/.golangci.yml                      @Amiya167 @HwlloChen
+
+# Documentation
+/README.md                          @Amiya167 @HwlloChen
+/LICENSE                            @Amiya167 @HwlloChen
+/MAINTAINERS                        @Amiya167 @HwlloChen
+
+# ============================================================================
+# HwlloChen PRIMARY - Full-stack, CLI, Web, CI/CD
+# ============================================================================
+
+# Management web interface (Vue.js expertise)
+/manage-web/                        @HwlloChen @Amiya167
+
+# Command line tools (Go CLI development)
+/cmd/                               @HwlloChen @Amiya167
+/cmd/hypervisor-server/             @HwlloChen @Amiya167
+/cmd/hypervisor-agent/              @HwlloChen @Amiya167
+/cmd/hypervisor-ctl/                @HwlloChen @Amiya167
+
+# CI/CD workflows
+/.github/                           @HwlloChen @Amiya167
+/.github/workflows/                 @HwlloChen @Amiya167
+/.github/CODEOWNERS                 @Amiya167 @HwlloChen

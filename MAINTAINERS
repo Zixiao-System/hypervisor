@@ -1,0 +1,198 @@
+List of maintainers and how to submit changes
+=============================================
+
+Please try to follow the guidelines below. This will make things
+easier on the maintainers. Not all of these guidelines matter for every
+trivial patch so apply some common sense.
+
+Descriptions of section entries:
+
+	M: Mail patches to: FullName <address@domain>
+	R: Designated reviewer: FullName <address@domain>
+	   These reviewers should be CCed on patches.
+	L: Mailing list that is relevant to this area
+	S: Status, one of the following:
+	   Supported:	Someone is actually paid to look after this.
+	   Maintained:	Someone actually looks after it.
+	   Odd Fixes:	It has a maintainer but they don't have time to do
+			much other than throw the odd patch in. See below.
+	   Orphan:	No current maintainer [but maybe you could take the
+			role as you submit your patch].
+	   Obsolete:	Old code. Something tagged obsolete generally means
+			it has been replaced by a better system and you
+			should be using that.
+	W: Web-page with status/info
+	Q: Patchwork web based patch tracking system site
+	B: URI for where to file bugs.
+	C: URI for chat protocol, server and channel where developers
+	   usually hang out, for example irc://server/channel.
+	T: SCM tree type and location.
+	   Type is one of: git, hg, quilt, stgit, topgit
+	F: Files and directories with wildcard patterns.
+	   A trailing slash includes all files and subdirectory files.
+	   F:	drivers/net/	all files in and below drivers/net
+	   F:	drivers/net/*	all files in drivers/net, but not below
+	   F:	*/net/*		all files in "any top level directory"/net
+	   One pattern per line.  Multiple F: lines acceptable.
+	N: Files and directories with regex patterns.
+	   N:	[^a-z]tegra	all files whose path contains the word tegra
+	   One pattern per line.  Multiple N: lines acceptable.
+	X: Files and directories that are NOT maintained, same rules as F:
+	   Files exclusions are tested before file matches.
+	   Can be useful for excluding a specific subdirectory, for instance:
+	   F:	net/
+	   X:	net/ipv6/
+	   matches all files in and below net excluding net/ipv6/
+	K: Keyword perl extended regex pattern to match content in a
+	   temporary diff of the source code.
+	   For instance:
+	   K: of_device_id\s*of_table
+	   matches patches or files that contain "of_device_id" and
+	   temporary "of_table" separated by zero or more whitespace
+	   characters.
+	   One pattern per line.  Multiple K: lines acceptable.
+
+Note: For the hard of thinking, this list is meant to remain in alphabetical
+order. If you could add yourselves to it in alphabetical order that would be
+so much easier [Ed]
+
+Maintainers List (Alphabetically sorted)
+----------------------------------------
+
+HYPERVISOR - OVERALL
+M:	Amiya167 <neuvillette-fontaine@outlook.com>
+M:	HwlloChen <hwllochen@qq.com>
+S:	Maintained
+W:	https://github.com/Amiya167/hypervisor
+T:	git https://github.com/Amiya167/hypervisor.git
+F:	*
+F:	*/
+
+API - PROTOBUF DEFINITIONS
+M:	Amiya167 <neuvillette-fontaine@outlook.com>
+R:	HwlloChen <hwllochen@qq.com>
+S:	Maintained
+F:	api/proto/
+F:	api/gen/
+
+BUILD SYSTEM
+M:	Amiya167 <neuvillette-fontaine@outlook.com>
+M:	HwlloChen <hwllochen@qq.com>
+S:	Maintained
+F:	Makefile
+F:	go.mod
+F:	go.sum
+F:	.golangci.yml
+
+C LIBRARY - LIBVIRT WRAPPER
+M:	Amiya167 <neuvillette-fontaine@outlook.com>
+S:	Maintained
+F:	clib/libvirt-wrapper/
+
+CI/CD - GITHUB ACTIONS
+M:	HwlloChen <hwllochen@qq.com>
+M:	Amiya167 <neuvillette-fontaine@outlook.com>
+S:	Maintained
+F:	.github/
+
+CLUSTER - ETCD CLIENT
+M:	Amiya167 <neuvillette-fontaine@outlook.com>
+S:	Maintained
+F:	pkg/cluster/etcd/
+
+CLUSTER - HEARTBEAT
+M:	Amiya167 <neuvillette-fontaine@outlook.com>
+R:	HwlloChen <hwllochen@qq.com>
+S:	Maintained
+F:	pkg/cluster/heartbeat/
+
+CLUSTER - REGISTRY
+M:	Amiya167 <neuvillette-fontaine@outlook.com>
+S:	Maintained
+F:	pkg/cluster/registry/
+
+COMMAND LINE TOOLS
+M:	HwlloChen <hwllochen@qq.com>
+M:	Amiya167 <neuvillette-fontaine@outlook.com>
+S:	Maintained
+F:	cmd/hypervisor-server/
+F:	cmd/hypervisor-agent/
+F:	cmd/hypervisor-ctl/
+
+COMPUTE - CONTAINERD DRIVER
+M:	Amiya167 <neuvillette-fontaine@outlook.com>
+R:	HwlloChen <hwllochen@qq.com>
+S:	Maintained
+F:	pkg/compute/containerd/
+
+COMPUTE - DRIVER INTERFACE
+M:	Amiya167 <neuvillette-fontaine@outlook.com>
+R:	HwlloChen <hwllochen@qq.com>
+S:	Maintained
+F:	pkg/compute/driver/
+
+COMPUTE - FIRECRACKER DRIVER
+M:	Amiya167 <neuvillette-fontaine@outlook.com>
+S:	Maintained
+F:	pkg/compute/firecracker/
+
+COMPUTE - LIBVIRT DRIVER
+M:	Amiya167 <neuvillette-fontaine@outlook.com>
+S:	Maintained
+F:	pkg/compute/libvirt/
+
+CONFIGURATION
+M:	Amiya167 <neuvillette-fontaine@outlook.com>
+M:	HwlloChen <hwllochen@qq.com>
+S:	Maintained
+F:	configs/
+
+DOCUMENTATION
+M:	Amiya167 <neuvillette-fontaine@outlook.com>
+M:	HwlloChen <hwllochen@qq.com>
+S:	Maintained
+F:	README.md
+F:	LICENSE
+F:	MAINTAINERS
+F:	CODEOWNERS
+
+INTERNAL - AGENT
+M:	Amiya167 <neuvillette-fontaine@outlook.com>
+R:	HwlloChen <hwllochen@qq.com>
+S:	Maintained
+F:	internal/agent/
+
+INTERNAL - SERVER
+M:	Amiya167 <neuvillette-fontaine@outlook.com>
+R:	HwlloChen <hwllochen@qq.com>
+S:	Maintained
+F:	internal/server/
+
+MANAGEMENT WEB INTERFACE
+M:	HwlloChen <hwllochen@qq.com>
+R:	Amiya167 <neuvillette-fontaine@outlook.com>
+S:	Maintained
+F:	manage-web/
+
+NETWORKING - OVS/DPDK (FUTURE)
+M:	Amiya167 <neuvillette-fontaine@outlook.com>
+S:	Maintained
+F:	pkg/network/
+
+STORAGE - DISTRIBUTED FILESYSTEM (FUTURE)
+M:	Amiya167 <neuvillette-fontaine@outlook.com>
+S:	Maintained
+F:	pkg/storage/
+
+THE REST
+M:	Amiya167 <neuvillette-fontaine@outlook.com>
+M:	HwlloChen <hwllochen@qq.com>
+S:	Maintained
+F:	*
+X:	api/
+X:	clib/
+X:	cmd/
+X:	configs/
+X:	internal/
+X:	manage-web/
+X:	pkg/
