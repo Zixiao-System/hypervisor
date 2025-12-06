@@ -1,0 +1,243 @@
+syntax = "proto3";
+
+package hypervisor.v1;
+
+option go_package = "hypervisor/api/gen/v1;v1";
+
+import "common.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+// ============================================================================
+// Compute Service - Instance (VM/Container/MicroVM) management
+// ============================================================================
+
+service ComputeService {
+    // Instance lifecycle
+    rpc CreateInstance(CreateInstanceRequest) returns (Instance);
+    rpc DeleteInstance(DeleteInstanceRequest) returns (google.protobuf.Empty);
+    rpc GetInstance(GetInstanceRequest) returns (Instance);
+    rpc ListInstances(ListInstancesRequest) returns (ListInstancesResponse);
+
+    // Instance operations
+    rpc StartInstance(StartInstanceRequest) returns (Instance);
+    rpc StopInstance(StopInstanceRequest) returns (Instance);
+    rpc RestartInstance(RestartInstanceRequest) returns (Instance);
+
+    // Instance monitoring
+    rpc GetInstanceStats(GetInstanceStatsRequest) returns (InstanceStats);
+    rpc WatchInstance(WatchInstanceRequest) returns (stream InstanceEvent);
+
+    // Console access
+    rpc AttachConsole(AttachConsoleRequest) returns (stream ConsoleData);
+
+    // Image management
+    rpc ListImages(ListImagesRequest) returns (ListImagesResponse);
+    rpc PullImage(PullImageRequest) returns (stream PullImageProgress);
+}
+
+// ============================================================================
+// Instance Messages
+// ============================================================================
+
+message Instance {
+    string id = 1;
+    string name = 2;
+    InstanceType type = 3;
+    InstanceState state = 4;
+
+    // Specification
+    InstanceSpec spec = 5;
+
+    // Runtime information
+    string node_id = 6;
+    string ip_address = 7;
+
+    // Metadata
+    Metadata metadata = 8;
+
+    // Status details
+    string state_reason = 9;
+
+    // Timestamps
+    google.protobuf.Timestamp created_at = 10;
+    google.protobuf.Timestamp started_at = 11;
+}
+
+message InstanceSpec {
+    string image = 1;
+    int32 cpu_cores = 2;
+    int64 memory_bytes = 3;
+    repeated DiskSpec disks = 4;
+    NetworkSpec network = 5;
+
+    // VM-specific
+    string kernel = 6;
+    string initrd = 7;
+    string kernel_args = 8;
+
+    // Container-specific
+    repeated string command = 10;
+    repeated string args = 11;
+    map<string, string> env = 12;
+    repeated VolumeMount volume_mounts = 13;
+
+    // Resource limits
+    ResourceLimits limits = 14;
+}
+
+message ResourceLimits {
+    int64 cpu_quota = 1;        // CPU quota in microseconds per period
+    int64 cpu_period = 2;       // CPU period in microseconds
+    int64 memory_limit = 3;     // Memory limit in bytes
+    int64 memory_swap = 4;      // Memory + Swap limit
+    int64 io_read_bps = 5;      // IO read bytes per second
+    int64 io_write_bps = 6;     // IO write bytes per second
+}
+
+message VolumeMount {
+    string name = 1;
+    string mount_path = 2;
+    bool read_only = 3;
+}
+
+message InstanceStats {
+    string instance_id = 1;
+
+    // CPU
+    double cpu_usage_percent = 2;
+    int64 cpu_time_ns = 3;
+
+    // Memory
+    int64 memory_used_bytes = 4;
+    int64 memory_cache_bytes = 5;
+
+    // Disk IO
+    int64 disk_read_bytes = 6;
+    int64 disk_write_bytes = 7;
+
+    // Network IO
+    int64 network_rx_bytes = 8;
+    int64 network_tx_bytes = 9;
+
+    google.protobuf.Timestamp collected_at = 10;
+}
+
+message InstanceEvent {
+    EventType type = 1;
+    Instance instance = 2;
+}
+
+// ============================================================================
+// Request/Response Messages
+// ============================================================================
+
+message CreateInstanceRequest {
+    string name = 1;
+    InstanceType type = 2;
+    InstanceSpec spec = 3;
+    Metadata metadata = 4;
+
+    // Scheduling hints
+    string preferred_node_id = 5;
+    string region = 6;
+    string zone = 7;
+}
+
+message DeleteInstanceRequest {
+    string instance_id = 1;
+    bool force = 2;
+}
+
+message GetInstanceRequest {
+    string instance_id = 1;
+}
+
+message ListInstancesRequest {
+    // Filters
+    InstanceType type = 1;
+    InstanceState state = 2;
+    string node_id = 3;
+    map<string, string> label_selector = 4;
+
+    // Pagination
+    int32 page_size = 10;
+    string page_token = 11;
+}
+
+message ListInstancesResponse {
+    repeated Instance instances = 1;
+    string next_page_token = 2;
+    int32 total_count = 3;
+}
+
+message StartInstanceRequest {
+    string instance_id = 1;
+}
+
+message StopInstanceRequest {
+    string instance_id = 1;
+    bool force = 2;
+    int32 timeout_seconds = 3;
+}
+
+message RestartInstanceRequest {
+    string instance_id = 1;
+    bool force = 2;
+}
+
+message GetInstanceStatsRequest {
+    string instance_id = 1;
+}
+
+message WatchInstanceRequest {
+    string instance_id = 1;
+}
+
+message AttachConsoleRequest {
+    string instance_id = 1;
+    bool tty = 2;
+    int32 width = 3;
+    int32 height = 4;
+}
+
+message ConsoleData {
+    bytes data = 1;
+}
+
+// ============================================================================
+// Image Messages
+// ============================================================================
+
+message Image {
+    string id = 1;
+    string name = 2;
+    repeated string tags = 3;
+    int64 size_bytes = 4;
+    InstanceType type = 5;  // Which instance types can use this image
+    google.protobuf.Timestamp created_at = 6;
+}
+
+message ListImagesRequest {
+    InstanceType type = 1;
+    int32 page_size = 2;
+    string page_token = 3;
+}
+
+message ListImagesResponse {
+    repeated Image images = 1;
+    string next_page_token = 2;
+}
+
+message PullImageRequest {
+    string image_ref = 1;
+    InstanceType type = 2;
+}
+
+message PullImageProgress {
+    string status = 1;
+    int64 current = 2;
+    int64 total = 3;
+    bool completed = 4;
+    string error = 5;
+}

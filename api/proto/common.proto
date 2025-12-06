@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+package hypervisor.v1;
+
+option go_package = "hypervisor/api/gen/v1;v1";
+
+import "google/protobuf/timestamp.proto";
+
+// ============================================================================
+// Common Enums
+// ============================================================================
+
+enum NodeRole {
+    NODE_ROLE_UNSPECIFIED = 0;
+    NODE_ROLE_MASTER = 1;
+    NODE_ROLE_WORKER = 2;
+}
+
+enum NodeStatus {
+    NODE_STATUS_UNSPECIFIED = 0;
+    NODE_STATUS_READY = 1;
+    NODE_STATUS_NOT_READY = 2;
+    NODE_STATUS_MAINTENANCE = 3;
+    NODE_STATUS_DRAINING = 4;
+}
+
+enum InstanceType {
+    INSTANCE_TYPE_UNSPECIFIED = 0;
+    INSTANCE_TYPE_VM = 1;
+    INSTANCE_TYPE_CONTAINER = 2;
+    INSTANCE_TYPE_MICROVM = 3;
+}
+
+enum InstanceState {
+    INSTANCE_STATE_UNSPECIFIED = 0;
+    INSTANCE_STATE_PENDING = 1;
+    INSTANCE_STATE_CREATING = 2;
+    INSTANCE_STATE_RUNNING = 3;
+    INSTANCE_STATE_STOPPED = 4;
+    INSTANCE_STATE_FAILED = 5;
+    INSTANCE_STATE_DELETING = 6;
+}
+
+enum EventType {
+    EVENT_TYPE_UNSPECIFIED = 0;
+    EVENT_TYPE_ADDED = 1;
+    EVENT_TYPE_MODIFIED = 2;
+    EVENT_TYPE_DELETED = 3;
+}
+
+// ============================================================================
+// Resource Types
+// ============================================================================
+
+message Resources {
+    int32 cpu_cores = 1;
+    int64 memory_bytes = 2;
+    int64 disk_bytes = 3;
+    int32 gpu_count = 4;
+}
+
+message NodeCondition {
+    string type = 1;           // Ready, DiskPressure, MemoryPressure, NetworkUnavailable
+    string status = 2;         // True, False, Unknown
+    string reason = 3;
+    string message = 4;
+    google.protobuf.Timestamp last_transition_time = 5;
+}
+
+message NetworkSpec {
+    string network_id = 1;
+    string subnet_id = 2;
+    repeated string security_groups = 3;
+    bool assign_public_ip = 4;
+}
+
+message DiskSpec {
+    string name = 1;
+    int64 size_bytes = 2;
+    string type = 3;           // ssd, hdd
+    bool boot = 4;
+}
+
+message Metadata {
+    map<string, string> labels = 1;
+    map<string, string> annotations = 2;
+}

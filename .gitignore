@@ -1,3 +1,40 @@
-#ide
-.idea
-.vscode
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Build artifacts
+bin/
+*.o
+*.a
+coverage.out
+coverage.html
+
+# Generated files
+api/gen/
+
+# Config files (use templates)
+configs/server.yaml
+configs/agent.yaml
+*.log
+*.pid
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Secrets (never commit)
+*.pem
+*.key
+secrets/
+.env
+.env.*
+
+# Test artifacts
+*.test
+*.prof
+
+# Go
+vendor/

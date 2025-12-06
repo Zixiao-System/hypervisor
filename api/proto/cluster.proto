@@ -1,0 +1,165 @@
+syntax = "proto3";
+
+package hypervisor.v1;
+
+option go_package = "hypervisor/api/gen/v1;v1";
+
+import "common.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+// ============================================================================
+// Cluster Service - Node management and cluster coordination
+// ============================================================================
+
+service ClusterService {
+    // Node registration and management
+    rpc RegisterNode(RegisterNodeRequest) returns (RegisterNodeResponse);
+    rpc DeregisterNode(DeregisterNodeRequest) returns (google.protobuf.Empty);
+    rpc GetNode(GetNodeRequest) returns (Node);
+    rpc ListNodes(ListNodesRequest) returns (ListNodesResponse);
+    rpc UpdateNodeStatus(UpdateNodeStatusRequest) returns (Node);
+
+    // Node health and heartbeat
+    rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+
+    // Watch for node changes (streaming)
+    rpc WatchNodes(WatchNodesRequest) returns (stream NodeEvent);
+
+    // Cluster information
+    rpc GetClusterInfo(google.protobuf.Empty) returns (ClusterInfo);
+}
+
+// ============================================================================
+// Node Messages
+// ============================================================================
+
+message Node {
+    string id = 1;
+    string hostname = 2;
+    string ip = 3;
+    int32 port = 4;
+    NodeRole role = 5;
+    NodeStatus status = 6;
+
+    // Location
+    string region = 7;
+    string zone = 8;
+
+    // Resources
+    Resources capacity = 9;      // Total resources
+    Resources allocatable = 10;  // Available for scheduling
+    Resources allocated = 11;    // Currently in use
+
+    // Health conditions
+    repeated NodeCondition conditions = 12;
+
+    // Metadata
+    Metadata metadata = 13;
+
+    // Supported features
+    repeated string supported_instance_types = 14;  // vm, container, microvm
+
+    // Timestamps
+    google.protobuf.Timestamp created_at = 15;
+    google.protobuf.Timestamp last_seen = 16;
+}
+
+message NodeEvent {
+    EventType type = 1;
+    Node node = 2;
+}
+
+// ============================================================================
+// Request/Response Messages
+// ============================================================================
+
+message RegisterNodeRequest {
+    string hostname = 1;
+    string ip = 2;
+    int32 port = 3;
+    NodeRole role = 4;
+    string region = 5;
+    string zone = 6;
+    Resources capacity = 7;
+    Metadata metadata = 8;
+    repeated string supported_instance_types = 9;
+}
+
+message RegisterNodeResponse {
+    string node_id = 1;
+    int64 heartbeat_interval_seconds = 2;
+    int64 lease_ttl_seconds = 3;
+}
+
+message DeregisterNodeRequest {
+    string node_id = 1;
+}
+
+message GetNodeRequest {
+    string node_id = 1;
+}
+
+message ListNodesRequest {
+    // Filters
+    NodeRole role = 1;
+    NodeStatus status = 2;
+    string region = 3;
+    string zone = 4;
+    map<string, string> label_selector = 5;
+
+    // Pagination
+    int32 page_size = 10;
+    string page_token = 11;
+}
+
+message ListNodesResponse {
+    repeated Node nodes = 1;
+    string next_page_token = 2;
+    int32 total_count = 3;
+}
+
+message UpdateNodeStatusRequest {
+    string node_id = 1;
+    NodeStatus status = 2;
+    repeated NodeCondition conditions = 3;
+    Resources allocated = 4;
+}
+
+message HeartbeatRequest {
+    string node_id = 1;
+    NodeStatus status = 2;
+    repeated NodeCondition conditions = 3;
+    Resources allocated = 4;
+}
+
+message HeartbeatResponse {
+    bool accepted = 1;
+    int64 next_heartbeat_seconds = 2;
+
+    // Commands from master to agent
+    repeated NodeCommand commands = 3;
+}
+
+message NodeCommand {
+    string id = 1;
+    string type = 2;  // drain, maintenance, upgrade
+    map<string, string> parameters = 3;
+}
+
+message WatchNodesRequest {
+    // Optional filters
+    NodeRole role = 1;
+    string region = 2;
+    string zone = 3;
+}
+
+message ClusterInfo {
+    string cluster_id = 1;
+    string cluster_name = 2;
+    string version = 3;
+    int32 total_nodes = 4;
+    int32 ready_nodes = 5;
+    Resources total_capacity = 6;
+    Resources total_allocated = 7;
+}

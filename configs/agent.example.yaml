@@ -1,0 +1,67 @@
+# Hypervisor Agent Configuration
+# Copy to /etc/hypervisor/agent.yaml or ~/.hypervisor/agent.yaml
+
+# Node identification
+# node_id: ""  # Auto-generated if empty
+# hostname: "" # Auto-detected if empty
+# ip: ""       # Node IP address
+
+# Agent gRPC server port
+port: 50052
+
+# Node role
+role: worker  # worker or master
+
+# Location
+region: default
+zone: default
+
+# Control plane server address
+server_addr: "localhost:50051"
+
+# Custom labels
+labels:
+  # env: production
+  # tier: compute
+
+# Supported instance types
+supported_instance_types:
+  - vm
+  - container
+  - microvm
+
+# etcd configuration
+etcd:
+  endpoints:
+    - "localhost:2379"
+  dial_timeout: 5s
+
+# Heartbeat configuration
+heartbeat:
+  interval: 10s
+  timeout: 30s
+  retry_interval: 2s
+
+# libvirt configuration (for VM support)
+libvirt:
+  uri: "qemu:///system"
+  default_network: default
+  default_storage_pool: default
+  image_path: /var/lib/hypervisor/images
+
+# containerd configuration (for container support)
+# containerd:
+#   address: /run/containerd/containerd.sock
+#   namespace: hypervisor
+#   snapshotter: overlayfs
+
+# Firecracker configuration (for microVM support)
+# firecracker:
+#   binary_path: /usr/bin/firecracker
+#   kernel_path: /var/lib/hypervisor/kernels/vmlinux
+#   root_drive_path: /var/lib/hypervisor/rootfs
+#   socket_path: /var/run/hypervisor/firecracker
+#   log_path: /var/log/hypervisor/firecracker
+
+# Logging
+log_level: info
