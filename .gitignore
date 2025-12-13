@@ -41,3 +41,4 @@ vendor/
 /control_and_manage_plane/src/node_modules/
 /pkg/virtual-apps-and-desktop/electron_client/node_modules/
 /pkg/virtual-apps-and-desktop/html-web-access/node_modules/
+/#go.mod#
