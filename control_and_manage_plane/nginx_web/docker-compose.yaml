@@ -1,0 +1,36 @@
+# Docker Compose for Zixiao Hypervisor Web Services
+version: '3.8'
+
+services:
+  # Envoy Proxy - gRPC-Web gateway
+  envoy:
+    image: envoyproxy/envoy:v1.28-latest
+    container_name: zixiao-envoy
+    ports:
+      - "8080:8080"   # HTTP/gRPC-Web
+      - "9901:9901"   # Admin interface
+    volumes:
+      - ./envoy.yaml:/etc/envoy/envoy.yaml:ro
+    command: /usr/local/bin/envoy -c /etc/envoy/envoy.yaml
+    networks:
+      - zixiao-network
+    depends_on:
+      - web-ui
+
+  # Vue Web UI (development)
+  web-ui:
+    image: node:20-alpine
+    container_name: zixiao-web-ui
+    working_dir: /app
+    ports:
+      - "5173:5173"
+    volumes:
+      - ../src:/app
+      - /app/node_modules
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    networks:
+      - zixiao-network
+
+networks:
+  zixiao-network:
+    driver: bridge

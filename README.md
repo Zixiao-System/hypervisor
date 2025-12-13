@@ -116,29 +116,37 @@ docker run -d --name etcd -p 2379:2379 \
 ```
 hypervisor/
 ├── api/
-│   ├── proto/           # gRPC protocol definitions
-│   └── gen/             # Generated Go code
+│   ├── proto/                    # gRPC protocol definitions
+│   └── gen/                      # Generated Go code
 ├── cmd/
-│   ├── hypervisor-server/   # Control plane binary
-│   ├── hypervisor-agent/    # Node agent binary
-│   └── hypervisor-ctl/      # CLI tool
+│   ├── hypervisor-server/        # Control plane binary
+│   ├── hypervisor-agent/         # Node agent binary
+│   └── hypervisor-ctl/           # CLI tool
 ├── pkg/
 │   ├── cluster/
-│   │   ├── etcd/        # etcd client wrapper
-│   │   ├── registry/    # Node registration
-│   │   └── heartbeat/   # Health monitoring
-│   └── compute/
-│       ├── driver/      # Driver interface
-│       ├── libvirt/     # KVM/QEMU driver
-│       ├── containerd/  # Container driver
-│       └── firecracker/ # MicroVM driver
-├── internal/
-│   ├── server/          # Server implementation
-│   └── agent/           # Agent implementation
+│   │   ├── etcd/                 # etcd client wrapper
+│   │   ├── registry/             # Node registration
+│   │   └── heartbeat/            # Health monitoring
+│   ├── compute/
+│   │   ├── driver/               # Driver interface
+│   │   ├── libvirt/              # KVM/QEMU driver
+│   │   ├── containerd/           # Container driver
+│   │   └── firecracker/          # MicroVM driver
+│   └── virtual-apps-and-desktop/
+│       ├── electron_client/      # VDI desktop client (Electron + Vue)
+│       └── html-web-access/      # Browser-based desktop access
+├── control_and_manage_plane/
+│   ├── src/                      # Management Web UI (Vue 3 + MDUI)
+│   └── nginx_web/                # Envoy gRPC-Web proxy
 ├── clib/
-│   └── libvirt-wrapper/ # C wrapper for libvirt
-├── configs/             # Configuration templates
-└── deployments/         # Docker & systemd files
+│   ├── libvirt-wrapper/          # C wrapper for libvirt
+│   ├── guest-drivers/
+│   │   ├── balloon/              # Memory balloon driver
+│   │   └── virtio/               # VirtIO ring implementation
+│   ├── ebpf-network-accel/       # eBPF/XDP network acceleration
+│   └── ovs-dpdk-network/         # OVS-DPDK integration
+├── configs/                      # Configuration templates
+└── deployments/                  # Docker & systemd files
 ```
 
 ## Configuration
@@ -222,12 +230,55 @@ make build-linux
 
 ## Roadmap
 
-- [ ] Web UI (MDUI-based management interface)
-- [ ] Distributed File System integration
-- [ ] SDN/VXLAN networking
+### Phase 1: Core Infrastructure (Completed)
+- [x] Distributed cluster architecture with etcd
+- [x] Multi-runtime support (VM/Container/MicroVM)
+- [x] gRPC API and CLI tools
+- [x] Node registration and heartbeat monitoring
+
+### Phase 2: Web & Desktop Clients (In Progress)
+- [x] Management Plane Web UI (Vue 3 + MDUI)
+- [x] Electron Desktop Client for VDI
+- [x] HTML5 Web Access (noVNC/SPICE)
+- [x] Envoy gRPC-Web proxy configuration
+
+### Phase 3: Network Acceleration (In Progress)
+- [x] eBPF/XDP network acceleration library
+- [x] OVS-DPDK integration with vhost-user
+- [ ] SDN/VXLAN overlay networking
+- [ ] Distributed virtual router
+
+### Phase 4: Guest Drivers (Planned)
+- [x] VirtIO ring library (virtio_ring.c)
+- [x] Memory balloon driver
+- [ ] **VDI Guest Agent** (Linux)
+  - Display resize and multi-monitor support
+  - Clipboard sharing (text/image/file)
+  - Audio redirection
+  - USB device redirection
+  - Seamless window mode
+- [ ] **Windows Guest Drivers** (Priority: High)
+  - Windows VirtIO drivers (storage, network, balloon)
+  - SPICE guest agent for Windows
+  - QXL/VirtIO-GPU display driver
+  - QEMU Guest Agent (qga) for Windows
+  - Signed drivers for Windows 10/11/Server
+
+### Phase 5: Advanced Features (Planned)
 - [ ] Live migration support
-- [ ] GPU passthrough
+- [ ] GPU passthrough (NVIDIA/AMD)
+- [ ] vGPU support (NVIDIA GRID, Intel GVT-g)
+- [ ] SR-IOV network virtualization
+- [ ] Distributed File System integration
 - [ ] Multi-tenancy and RBAC
+- [ ] Kubernetes integration (Virtual Kubelet)
+
+### Phase 6: Enterprise Features (Future)
+- [ ] High Availability clustering
+- [ ] Disaster Recovery (DR) automation
+- [ ] Backup and snapshot management
+- [ ] Resource quota and chargeback
+- [ ] Audit logging and compliance
 
 ## Contributing
 

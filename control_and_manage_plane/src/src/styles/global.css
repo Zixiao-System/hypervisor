@@ -1,0 +1,188 @@
+/* Global styles for Zixiao Hypervisor */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+#app {
+  height: 100%;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--zixiao-purple-light);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--zixiao-purple);
+}
+
+/* Card styles */
+.zixiao-card {
+  background: rgb(var(--mdui-color-surface-container-low-light));
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.mdui-theme-dark .zixiao-card {
+  background: rgb(var(--mdui-color-surface-container-low-dark));
+}
+
+/* Status indicators */
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-ready, .status-running {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.status-not-ready, .status-stopped {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.status-pending, .status-creating {
+  background: rgba(252, 211, 77, 0.15);
+  color: var(--lightning-gold-dark);
+}
+
+.status-maintenance, .status-paused {
+  background: rgba(139, 92, 246, 0.15);
+  color: var(--zixiao-purple);
+}
+
+/* Resource usage bars */
+.resource-bar {
+  height: 8px;
+  background: rgb(var(--mdui-color-surface-container-highest-light));
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.mdui-theme-dark .resource-bar {
+  background: rgb(var(--mdui-color-surface-container-highest-dark));
+}
+
+.resource-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.resource-bar-fill.cpu {
+  background: var(--zixiao-purple);
+}
+
+.resource-bar-fill.memory {
+  background: var(--lightning-gold);
+}
+
+.resource-bar-fill.disk {
+  background: #22c55e;
+}
+
+/* Grid layouts */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.nodes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+/* Typography */
+.section-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--zixiao-purple);
+}
+
+.card-title {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--zixiao-purple);
+}
+
+.stat-label {
+  font-size: 14px;
+  color: rgb(var(--mdui-color-on-surface-variant-light));
+}
+
+.mdui-theme-dark .stat-label {
+  color: rgb(var(--mdui-color-on-surface-variant-dark));
+}
+
+/* Utility classes */
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.gap-2 {
+  gap: 8px;
+}
+
+.gap-4 {
+  gap: 16px;
+}
+
+.mb-4 {
+  margin-bottom: 16px;
+}
+
+.text-sm {
+  font-size: 14px;
+}
+
+.text-muted {
+  opacity: 0.7;
+}
