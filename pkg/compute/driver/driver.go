@@ -46,10 +46,10 @@ type Instance struct {
 // InstanceSpec defines the specification for creating an instance.
 type InstanceSpec struct {
 	// Common fields
-	Image     string `json:"image"`
-	CPUCores  int    `json:"cpu_cores"`
-	MemoryMB  int64  `json:"memory_mb"`
-	DiskGB    int64  `json:"disk_gb"`
+	Image    string `json:"image"`
+	CPUCores int    `json:"cpu_cores"`
+	MemoryMB int64  `json:"memory_mb"`
+	DiskGB   int64  `json:"disk_gb"`
 
 	// VM-specific
 	Kernel     string `json:"kernel,omitempty"`
@@ -74,12 +74,12 @@ type InstanceSpec struct {
 
 // NetworkSpec defines network configuration.
 type NetworkSpec struct {
-	NetworkID       string   `json:"network_id,omitempty"`
-	SubnetID        string   `json:"subnet_id,omitempty"`
-	SecurityGroups  []string `json:"security_groups,omitempty"`
-	AssignPublicIP  bool     `json:"assign_public_ip,omitempty"`
-	MACAddress      string   `json:"mac_address,omitempty"`
-	IPAddress       string   `json:"ip_address,omitempty"`
+	NetworkID      string   `json:"network_id,omitempty"`
+	SubnetID       string   `json:"subnet_id,omitempty"`
+	SecurityGroups []string `json:"security_groups,omitempty"`
+	AssignPublicIP bool     `json:"assign_public_ip,omitempty"`
+	MACAddress     string   `json:"mac_address,omitempty"`
+	IPAddress      string   `json:"ip_address,omitempty"`
 }
 
 // DiskSpec defines disk configuration.
@@ -102,16 +102,16 @@ type ResourceLimits struct {
 
 // InstanceStats contains runtime statistics for an instance.
 type InstanceStats struct {
-	InstanceID      string    `json:"instance_id"`
-	CPUUsagePercent float64   `json:"cpu_usage_percent"`
-	CPUTimeNs       uint64    `json:"cpu_time_ns"`
-	MemoryUsedBytes uint64    `json:"memory_used_bytes"`
-	MemoryCacheBytes uint64   `json:"memory_cache_bytes"`
-	DiskReadBytes   uint64    `json:"disk_read_bytes"`
-	DiskWriteBytes  uint64    `json:"disk_write_bytes"`
-	NetworkRxBytes  uint64    `json:"network_rx_bytes"`
-	NetworkTxBytes  uint64    `json:"network_tx_bytes"`
-	CollectedAt     time.Time `json:"collected_at"`
+	InstanceID       string    `json:"instance_id"`
+	CPUUsagePercent  float64   `json:"cpu_usage_percent"`
+	CPUTimeNs        uint64    `json:"cpu_time_ns"`
+	MemoryUsedBytes  uint64    `json:"memory_used_bytes"`
+	MemoryCacheBytes uint64    `json:"memory_cache_bytes"`
+	DiskReadBytes    uint64    `json:"disk_read_bytes"`
+	DiskWriteBytes   uint64    `json:"disk_write_bytes"`
+	NetworkRxBytes   uint64    `json:"network_rx_bytes"`
+	NetworkTxBytes   uint64    `json:"network_tx_bytes"`
+	CollectedAt      time.Time `json:"collected_at"`
 }
 
 // AttachOptions defines options for attaching to an instance console.
@@ -165,11 +165,11 @@ type Driver interface {
 
 // HostInfo contains information about the host.
 type HostInfo struct {
-	Hostname         string `json:"hostname"`
-	CPUCores         int    `json:"cpu_cores"`
-	MemoryBytes      int64  `json:"memory_bytes"`
-	FreeMemoryBytes  int64  `json:"free_memory_bytes"`
-	HypervisorType   string `json:"hypervisor_type"`
+	Hostname          string `json:"hostname"`
+	CPUCores          int    `json:"cpu_cores"`
+	MemoryBytes       int64  `json:"memory_bytes"`
+	FreeMemoryBytes   int64  `json:"free_memory_bytes"`
+	HypervisorType    string `json:"hypervisor_type"`
 	HypervisorVersion string `json:"hypervisor_version"`
 }
 

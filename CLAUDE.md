@@ -91,6 +91,19 @@ Used via CGO for performance-critical paths:
 - `ebpf-network-accel/` - eBPF/XDP network acceleration
 - `ovs-dpdk-network/` - OVS-DPDK integration
 
+### Windows Host Components (clib/windows-host/)
+
+- `windows-hypervisor-agent/` - Windows host hypervisor agent (Visual Studio C++ project, ARM64/x64)
+
+### Windows Guest Drivers (clib/guest-drivers/windows/)
+
+- `Windows-VirtIO-Driver/` - Windows VirtIO kernel driver (KMDF, requires WDK to build)
+
+## VDI Guest Drivers (pkg/virtual-apps-and-desktop/guest_drivers/)
+
+Guest-side agents for Virtual Desktop Infrastructure:
+- `windows/webrtc/Windows-VDI-WebRTC-Agent/` - Windows WebRTC streaming agent for VDI (Visual Studio C++ project)
+
 ## Code Style
 
 - Go imports: local imports use prefix `hypervisor` (configured in `.golangci.yml`)

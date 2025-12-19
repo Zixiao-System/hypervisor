@@ -57,10 +57,10 @@ type HeartbeatService struct {
 	config   Config
 	logger   *zap.Logger
 
-	mu       sync.RWMutex
-	running  bool
-	cancel   context.CancelFunc
-	leaseID  clientv3.LeaseID
+	mu        sync.RWMutex
+	running   bool
+	cancel    context.CancelFunc
+	leaseID   clientv3.LeaseID
 	keepAlive <-chan *clientv3.LeaseKeepAliveResponse
 }
 

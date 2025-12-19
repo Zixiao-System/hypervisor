@@ -61,8 +61,8 @@ type EtcdRegistry struct {
 	logger *zap.Logger
 
 	// Lease management for registered nodes
-	mu      sync.RWMutex
-	leases  map[string]clientv3.LeaseID
+	mu       sync.RWMutex
+	leases   map[string]clientv3.LeaseID
 	leaseTTL int64
 
 	// Watch cancel function

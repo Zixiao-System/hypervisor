@@ -328,14 +328,14 @@ func (d *Driver) Stats(ctx context.Context, id string) (*driver.InstanceStats, e
 	}
 
 	return &driver.InstanceStats{
-		InstanceID:       id,
-		CPUTimeNs:        uint64(stats.cpu_time_ns),
-		MemoryUsedBytes:  uint64(stats.memory_used_kb) * 1024,
-		DiskReadBytes:    uint64(stats.disk_read_bytes),
-		DiskWriteBytes:   uint64(stats.disk_write_bytes),
-		NetworkRxBytes:   uint64(stats.net_rx_bytes),
-		NetworkTxBytes:   uint64(stats.net_tx_bytes),
-		CollectedAt:      time.Now(),
+		InstanceID:      id,
+		CPUTimeNs:       uint64(stats.cpu_time_ns),
+		MemoryUsedBytes: uint64(stats.memory_used_kb) * 1024,
+		DiskReadBytes:   uint64(stats.disk_read_bytes),
+		DiskWriteBytes:  uint64(stats.disk_write_bytes),
+		NetworkRxBytes:  uint64(stats.net_rx_bytes),
+		NetworkTxBytes:  uint64(stats.net_tx_bytes),
+		CollectedAt:     time.Now(),
 	}, nil
 }
 

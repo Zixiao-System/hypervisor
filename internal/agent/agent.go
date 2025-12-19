@@ -66,16 +66,16 @@ func DefaultConfig() Config {
 	hostname, _ := os.Hostname()
 
 	return Config{
-		Hostname:   hostname,
-		Port:       50052,
-		Role:       "worker",
-		Region:     "default",
-		Zone:       "default",
-		ServerAddr: "localhost:50051",
-		Labels:     make(map[string]string),
-		Etcd:       etcd.DefaultConfig(),
-		Heartbeat:  heartbeat.DefaultConfig(),
-		Libvirt:    libvirt.DefaultConfig(),
+		Hostname:               hostname,
+		Port:                   50052,
+		Role:                   "worker",
+		Region:                 "default",
+		Zone:                   "default",
+		ServerAddr:             "localhost:50051",
+		Labels:                 make(map[string]string),
+		Etcd:                   etcd.DefaultConfig(),
+		Heartbeat:              heartbeat.DefaultConfig(),
+		Libvirt:                libvirt.DefaultConfig(),
 		SupportedInstanceTypes: []string{"vm", "container", "microvm"},
 	}
 }
@@ -311,7 +311,7 @@ func (a *Agent) getHostResources() (registry.Resources, error) {
 	// Fallback to defaults
 	return registry.Resources{
 		CPUCores:    4,
-		MemoryBytes: 8 * 1024 * 1024 * 1024, // 8GB
+		MemoryBytes: 8 * 1024 * 1024 * 1024,   // 8GB
 		DiskBytes:   100 * 1024 * 1024 * 1024, // 100GB
 	}, nil
 }

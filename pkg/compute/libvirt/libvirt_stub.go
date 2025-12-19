@@ -43,14 +43,16 @@ func New(config Config, logger *zap.Logger) (*Driver, error) {
 	return nil, ErrLibvirtNotAvailable
 }
 
-func (d *Driver) Name() string                                           { return "libvirt" }
-func (d *Driver) Type() driver.InstanceType                              { return driver.InstanceTypeVM }
+func (d *Driver) Name() string              { return "libvirt" }
+func (d *Driver) Type() driver.InstanceType { return driver.InstanceTypeVM }
 func (d *Driver) Create(ctx context.Context, spec *driver.InstanceSpec) (*driver.Instance, error) {
 	return nil, ErrLibvirtNotAvailable
 }
-func (d *Driver) Start(ctx context.Context, id string) error             { return ErrLibvirtNotAvailable }
-func (d *Driver) Stop(ctx context.Context, id string, force bool) error  { return ErrLibvirtNotAvailable }
-func (d *Driver) Delete(ctx context.Context, id string) error            { return ErrLibvirtNotAvailable }
+func (d *Driver) Start(ctx context.Context, id string) error { return ErrLibvirtNotAvailable }
+func (d *Driver) Stop(ctx context.Context, id string, force bool) error {
+	return ErrLibvirtNotAvailable
+}
+func (d *Driver) Delete(ctx context.Context, id string) error { return ErrLibvirtNotAvailable }
 func (d *Driver) Get(ctx context.Context, id string) (*driver.Instance, error) {
 	return nil, ErrLibvirtNotAvailable
 }
