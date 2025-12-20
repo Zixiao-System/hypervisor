@@ -83,6 +83,47 @@ All drivers implement the same interface with `Instance` and `InstanceSpec` abst
 - `pkg/virtual-apps-and-desktop/electron_client/` - Electron VDI desktop client
 - `pkg/virtual-apps-and-desktop/html-web-access/` - HTML5 browser-based desktop access
 
+### Management Web UI Structure (`control_and_manage_plane/src/`)
+
+```
+src/
+├── api/                    # gRPC-Web client layer
+│   ├── transport.ts        # gRPC-Web transport configuration
+│   ├── clients.ts          # Service client instances (clusterClient, computeClient)
+│   └── converters.ts       # Protobuf ↔ TypeScript type converters
+├── gen/                    # Generated protobuf TypeScript code (via buf)
+│   ├── cluster_pb.ts       # Cluster message types
+│   ├── cluster_connect.ts  # ClusterService client
+│   ├── compute_pb.ts       # Compute message types
+│   ├── compute_connect.ts  # ComputeService client
+│   └── common_pb.ts        # Shared enums and types
+├── stores/                 # Pinia state management
+│   ├── cluster.ts          # Node and cluster state
+│   ├── compute.ts          # Instance state
+│   ├── metrics.ts          # Real-time metrics history
+│   └── theme.ts            # Dark/light theme
+├── components/
+│   ├── charts/             # Chart.js visualizations
+│   │   ├── ResourceGaugeChart.vue      # Doughnut chart (CPU/Memory/Disk)
+│   │   ├── ResourceTrendChart.vue      # Line chart (historical metrics)
+│   │   └── InstanceDistributionChart.vue # Pie chart (VM/Container/MicroVM)
+│   └── TerminalConsole.vue # xterm.js WebSocket terminal
+├── views/
+│   ├── DashboardView.vue   # Overview with charts
+│   ├── ConsoleView.vue     # Full-screen instance console
+│   └── ...
+├── styles/
+│   └── theme.css           # Zixiao theme (purple primary, gold accent)
+├── buf.yaml                # Buf configuration
+└── buf.gen.yaml            # Buf code generation config
+```
+
+**Proto Generation:**
+```bash
+cd control_and_manage_plane/src
+npm run proto:gen           # Generate TypeScript from api/proto/
+```
+
 ## C Libraries (clib/)
 
 Used via CGO for performance-critical paths:
@@ -93,16 +134,16 @@ Used via CGO for performance-critical paths:
 
 ### Windows Host Components (clib/windows-host/)
 
-- `windows-hypervisor-agent/` - Windows host hypervisor agent (Visual Studio C++ project, ARM64/x64)
+- `windows-hypervisor-agent/` - Windows host hypervisor agent (Visual Studio 2026 C++ project, ARM64/x64)
 
 ### Windows Guest Drivers (clib/guest-drivers/windows/)
 
-- `Windows-VirtIO-Driver/` - Windows VirtIO kernel driver (KMDF, requires WDK to build)
+- `Windows-VirtIO-Driver/` - Windows VirtIO kernel driver (KMDF, requires VS2022 + WDK)
 
 ## VDI Guest Drivers (pkg/virtual-apps-and-desktop/guest_drivers/)
 
 Guest-side agents for Virtual Desktop Infrastructure:
-- `windows/webrtc/Windows-VDI-WebRTC-Agent/` - Windows WebRTC streaming agent for VDI (Visual Studio C++ project)
+- `windows/webrtc/Windows-VDI-WebRTC-Agent/` - Windows WebRTC streaming agent for VDI (Visual Studio 2026 C++ project)
 
 ## Code Style
 

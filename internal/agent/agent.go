@@ -4,10 +4,12 @@ package agent
 import (
 	"context"
 	"fmt"
+	"net"
 	"os"
 	"sync"
 	"time"
 
+	v1 "hypervisor/api/gen"
 	"hypervisor/pkg/cluster/etcd"
 	"hypervisor/pkg/cluster/heartbeat"
 	"hypervisor/pkg/cluster/registry"
@@ -17,6 +19,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/reflection"
 )
 
 // Config holds the agent configuration.
@@ -97,8 +100,9 @@ type Agent struct {
 	// Compute drivers
 	drivers map[driver.InstanceType]driver.Driver
 
-	// gRPC connection to server
-	serverConn *grpc.ClientConn
+	// gRPC servers and connections
+	grpcServer *grpc.Server     // Agent gRPC server (for server to call)
+	serverConn *grpc.ClientConn // Connection to hypervisor-server
 
 	// Instance tracking
 	instances   map[string]*driver.Instance
@@ -227,6 +231,11 @@ func (a *Agent) Start(ctx context.Context) error {
 		return fmt.Errorf("failed to start heartbeat service: %w", err)
 	}
 
+	// Start gRPC server for agent service
+	if err := a.startGRPCServer(); err != nil {
+		return fmt.Errorf("failed to start gRPC server: %w", err)
+	}
+
 	// Connect to server
 	if a.config.ServerAddr != "" {
 		conn, err := grpc.Dial(
@@ -263,6 +272,11 @@ func (a *Agent) Stop() error {
 	// Stop heartbeat service
 	if a.heartbeatService != nil {
 		a.heartbeatService.Stop()
+	}
+
+	// Stop gRPC server
+	if a.grpcServer != nil {
+		a.grpcServer.GracefulStop()
 	}
 
 	// Deregister node
@@ -496,4 +510,32 @@ func (a *Agent) getInstance(id string) (*driver.Instance, error) {
 	}
 
 	return instance, nil
+}
+
+// startGRPCServer starts the agent gRPC server.
+func (a *Agent) startGRPCServer() error {
+	addr := fmt.Sprintf(":%d", a.config.Port)
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		return fmt.Errorf("failed to listen on %s: %w", addr, err)
+	}
+
+	a.grpcServer = grpc.NewServer()
+
+	// Register agent service
+	agentService := NewAgentGRPCService(a)
+	v1.RegisterAgentServiceServer(a.grpcServer, agentService)
+
+	// Register reflection for debugging
+	reflection.Register(a.grpcServer)
+
+	// Start server in background
+	go func() {
+		a.logger.Info("agent gRPC server started", zap.String("addr", addr))
+		if err := a.grpcServer.Serve(listener); err != nil {
+			a.logger.Error("gRPC server error", zap.Error(err))
+		}
+	}()
+
+	return nil
 }

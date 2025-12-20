@@ -1,0 +1,114 @@
+/* Zixiao Hypervisor Theme */
+
+:root {
+  /* Primary colors - Zixiao Purple */
+  --zixiao-purple: #8B5CF6;
+  --zixiao-purple-light: #A78BFA;
+  --zixiao-purple-dark: #7C3AED;
+  --zixiao-purple-surface: rgba(139, 92, 246, 0.08);
+
+  /* Accent colors - Lightning Gold */
+  --lightning-gold: #FCD34D;
+  --lightning-gold-light: #FDE68A;
+  --lightning-gold-dark: #F59E0B;
+
+  /* Semantic colors */
+  --success-color: #22c55e;
+  --warning-color: #f59e0b;
+  --error-color: #ef4444;
+  --info-color: #3b82f6;
+
+  /* Override MDUI primary color */
+  --mdui-color-primary-light: 139, 92, 246;
+  --mdui-color-primary-dark: 167, 139, 250;
+  --mdui-color-on-primary-light: 255, 255, 255;
+  --mdui-color-on-primary-dark: 0, 0, 0;
+
+  /* Override MDUI secondary color with lightning gold */
+  --mdui-color-secondary-light: 252, 211, 77;
+  --mdui-color-secondary-dark: 253, 230, 138;
+  --mdui-color-on-secondary-light: 0, 0, 0;
+  --mdui-color-on-secondary-dark: 0, 0, 0;
+
+  /* Surface colors for light theme */
+  --mdui-color-surface-light: 255, 255, 255;
+  --mdui-color-surface-container-light: 249, 250, 251;
+  --mdui-color-surface-container-low-light: 252, 252, 253;
+  --mdui-color-surface-container-high-light: 243, 244, 246;
+  --mdui-color-surface-container-highest-light: 229, 231, 235;
+
+  /* Surface colors for dark theme */
+  --mdui-color-surface-dark: 17, 24, 39;
+  --mdui-color-surface-container-dark: 31, 41, 55;
+  --mdui-color-surface-container-low-dark: 24, 32, 48;
+  --mdui-color-surface-container-high-dark: 55, 65, 81;
+  --mdui-color-surface-container-highest-dark: 75, 85, 99;
+
+  /* Text colors */
+  --mdui-color-on-surface-light: 17, 24, 39;
+  --mdui-color-on-surface-dark: 249, 250, 251;
+  --mdui-color-on-surface-variant-light: 107, 114, 128;
+  --mdui-color-on-surface-variant-dark: 156, 163, 175;
+}
+
+/* MDUI component overrides */
+mdui-button[variant="filled"] {
+  --mdui-comp-ripple-state-layer-color: var(--zixiao-purple);
+}
+
+mdui-fab {
+  --mdui-comp-fab-primary-container-color: var(--zixiao-purple);
+}
+
+mdui-linear-progress,
+mdui-circular-progress {
+  --mdui-comp-linear-progress-indicator-color: var(--zixiao-purple);
+  --mdui-comp-circular-progress-indicator-color: var(--zixiao-purple);
+}
+
+mdui-slider {
+  --mdui-comp-slider-active-track-color: var(--zixiao-purple);
+  --mdui-comp-slider-handle-color: var(--zixiao-purple);
+}
+
+mdui-switch[checked] {
+  --mdui-comp-switch-selected-track-color: var(--zixiao-purple);
+  --mdui-comp-switch-selected-handle-color: white;
+}
+
+mdui-checkbox[checked],
+mdui-radio[checked] {
+  --mdui-comp-checkbox-selected-container-color: var(--zixiao-purple);
+  --mdui-comp-radio-selected-icon-color: var(--zixiao-purple);
+}
+
+mdui-tabs {
+  --mdui-comp-tabs-primary-indicator-color: var(--zixiao-purple);
+  --mdui-comp-tabs-primary-active-label-text-color: var(--zixiao-purple);
+}
+
+/* Navigation drawer active item */
+mdui-navigation-drawer mdui-list-item[active] {
+  --mdui-comp-list-item-container-color: var(--zixiao-purple-surface);
+  color: var(--zixiao-purple);
+}
+
+/* Focus ring color */
+:focus-visible {
+  outline-color: var(--zixiao-purple);
+}
+
+/* Selection color */
+::selection {
+  background-color: var(--zixiao-purple-light);
+  color: white;
+}
+
+/* Link color */
+a {
+  color: var(--zixiao-purple);
+}
+
+a:hover {
+  color: var(--zixiao-purple-dark);
+}

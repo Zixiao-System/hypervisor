@@ -7,6 +7,7 @@ import (
 	"net"
 	"sync"
 
+	v1 "hypervisor/api/gen"
 	"hypervisor/pkg/cluster/etcd"
 	"hypervisor/pkg/cluster/heartbeat"
 	"hypervisor/pkg/cluster/registry"
@@ -51,9 +52,13 @@ type Server struct {
 	grpcServer *grpc.Server
 
 	// Cluster components
-	etcdClient *etcd.Client
-	registry   *registry.EtcdRegistry
-	monitor    *heartbeat.Monitor
+	etcdClient       *etcd.Client
+	registry         *registry.EtcdRegistry
+	instanceRegistry *registry.EtcdInstanceRegistry
+	monitor          *heartbeat.Monitor
+
+	// Agent client pool
+	agentClients *AgentClientPool
 
 	// Compute drivers (for managing instances across the cluster)
 	drivers map[driver.InstanceType]driver.Driver
@@ -77,6 +82,12 @@ func New(config Config, logger *zap.Logger) (*Server, error) {
 	// Create registry
 	reg := registry.NewEtcdRegistry(etcdClient, logger.Named("registry"))
 
+	// Create instance registry
+	instanceReg := registry.NewEtcdInstanceRegistry(etcdClient, logger.Named("instance-registry"))
+
+	// Create agent client pool
+	agentClients := NewAgentClientPool(reg, logger.Named("agent-clients"))
+
 	// Create heartbeat monitor
 	monitor := heartbeat.NewMonitor(reg, config.Heartbeat, func(nodeID string, alive bool) {
 		if !alive {
@@ -86,12 +97,14 @@ func New(config Config, logger *zap.Logger) (*Server, error) {
 	}, logger.Named("monitor"))
 
 	s := &Server{
-		config:     config,
-		logger:     logger,
-		etcdClient: etcdClient,
-		registry:   reg,
-		monitor:    monitor,
-		drivers:    make(map[driver.InstanceType]driver.Driver),
+		config:           config,
+		logger:           logger,
+		etcdClient:       etcdClient,
+		registry:         reg,
+		instanceRegistry: instanceReg,
+		agentClients:     agentClients,
+		monitor:          monitor,
+		drivers:          make(map[driver.InstanceType]driver.Driver),
 	}
 
 	// Create gRPC server with interceptors
@@ -113,11 +126,13 @@ func New(config Config, logger *zap.Logger) (*Server, error) {
 func (s *Server) registerServices() {
 	// Register ClusterService
 	clusterService := NewClusterService(s.registry, s.logger.Named("cluster"))
-	RegisterClusterServiceServer(s.grpcServer, clusterService)
+	clusterHandler := NewClusterGRPCHandler(clusterService)
+	v1.RegisterClusterServiceServer(s.grpcServer, clusterHandler)
 
 	// Register ComputeService
-	computeService := NewComputeService(s.registry, s.drivers, s.logger.Named("compute"))
-	RegisterComputeServiceServer(s.grpcServer, computeService)
+	computeService := NewComputeService(s.registry, s.instanceRegistry, s.agentClients, s.logger.Named("compute"))
+	computeHandler := NewComputeGRPCHandler(computeService)
+	v1.RegisterComputeServiceServer(s.grpcServer, computeHandler)
 }
 
 // Start starts the server.
@@ -166,8 +181,18 @@ func (s *Server) Stop() error {
 	// Stop heartbeat monitor
 	s.monitor.Stop()
 
+	// Close agent clients
+	if s.agentClients != nil {
+		s.agentClients.Close()
+	}
+
 	// Gracefully stop gRPC server
 	s.grpcServer.GracefulStop()
+
+	// Close instance registry
+	if s.instanceRegistry != nil {
+		s.instanceRegistry.Close()
+	}
 
 	// Close registry
 	s.registry.Close()
@@ -214,19 +239,3 @@ func (s *Server) streamInterceptor(
 
 	return handler(srv, ss)
 }
-
-// RegisterClusterServiceServer is a placeholder for the generated registration function.
-func RegisterClusterServiceServer(s *grpc.Server, srv ClusterServiceServer) {
-	// This will be replaced by the generated code
-}
-
-// RegisterComputeServiceServer is a placeholder for the generated registration function.
-func RegisterComputeServiceServer(s *grpc.Server, srv ComputeServiceServer) {
-	// This will be replaced by the generated code
-}
-
-// ClusterServiceServer is the interface for the cluster service.
-type ClusterServiceServer interface{}
-
-// ComputeServiceServer is the interface for the compute service.
-type ComputeServiceServer interface{}

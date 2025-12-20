@@ -176,6 +176,15 @@
   resolved "https://registry.npmmirror.com/@material/material-color-utilities/-/material-color-utilities-0.3.0.tgz#681b0ecd0820ac012d50d371912227f6b2dc7817"
   integrity sha512-ztmtTd6xwnuh2/xu+Vb01btgV8SQWYCaK56CkRK8gEkWe5TuDyBcYJ0wgkMRn+2VcE9KUmhvkz+N9GHrqw/C0g==
 
+"@mdui/icons@^1.0.3":
+  version "1.0.3"
+  resolved "https://registry.npmmirror.com/@mdui/icons/-/icons-1.0.3.tgz#067539dab2bd4ee9e78d9d03dba296d3a6041b00"
+  integrity sha512-Jq9juUqIJMBvIRSTr0qBKiqnlbY5pVUzUP20EHSN8dT7GcqN7bq0AL8MASL5DxKs09kgcERq+z5bHJOkz/VDlA==
+  dependencies:
+    "@mdui/shared" "^1.0.8"
+    lit "^3.3.0"
+    tslib "^2.8.1"
+
 "@mdui/jq@^3.0.3":
   version "3.0.3"
   resolved "https://registry.npmmirror.com/@mdui/jq/-/jq-3.0.3.tgz#8247145074f0c9a273e96f650867f952fabdb0f4"
@@ -578,7 +587,7 @@ magic-string@^0.30.21:
   dependencies:
     "@jridgewell/sourcemap-codec" "^1.5.5"
 
-mdui@^2.2.1:
+mdui@^2.1.4:
   version "2.1.4"
   resolved "https://registry.npmmirror.com/mdui/-/mdui-2.1.4.tgz#53b90a69490e37c75966fba6d7d55fbdde69b174"
   integrity sha512-QtK5xia5HXtVO7yH30QjwvvNruw5JdrJL1MEc1k6S/ZfsbHOj6BxxdYjrdv2HiN5ikkGqt5CIbZdFyq6shaZyw==

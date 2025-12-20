@@ -29,8 +29,14 @@ A distributed cloud operating system built with Go and C, supporting VMs (KVM/li
 │  │  Cluster    │  │  Compute    │  │     Scheduler       │  │
 │  │  Service    │  │  Service    │  │                     │  │
 │  └─────────────┘  └─────────────┘  └─────────────────────┘  │
+│         │               │                    │              │
+│         └───────────────┼────────────────────┘              │
+│                         ▼                                   │
+│              ┌─────────────────────┐                        │
+│              │  Agent Client Pool  │                        │
+│              └─────────────────────┘                        │
 └─────────────────────────────────────────────────────────────┘
-                              │
+                              │ gRPC
               ┌───────────────┼───────────────┐
               ▼               ▼               ▼
 ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
@@ -46,9 +52,15 @@ A distributed cloud operating system built with Go and C, supporting VMs (KVM/li
                               ▼
                     ┌─────────────────┐
                     │      etcd       │
-                    │   (Cluster DB)  │
+                    │ (Nodes + Instances) │
                     └─────────────────┘
 ```
+
+### Data Flow
+
+1. **Instance Creation**: CLI/Web UI → Server (scheduling) → Agent (execution) → etcd (persistence)
+2. **Instance Operations**: Server → Agent Client Pool → Target Agent → Driver
+3. **State Storage**: Nodes and Instances are persisted in etcd with watch support
 
 ## Quick Start
 
@@ -117,15 +129,33 @@ docker run -d --name etcd -p 2379:2379 \
 hypervisor/
 ├── api/
 │   ├── proto/                    # gRPC protocol definitions
+│   │   ├── common.proto          # Shared types
+│   │   ├── cluster.proto         # ClusterService definition
+│   │   ├── compute.proto         # ComputeService definition
+│   │   └── agent.proto           # AgentService (internal) definition
 │   └── gen/                      # Generated Go code
 ├── cmd/
 │   ├── hypervisor-server/        # Control plane binary
 │   ├── hypervisor-agent/         # Node agent binary
 │   └── hypervisor-ctl/           # CLI tool
+├── internal/
+│   ├── server/                      # Control plane implementation
+│   │   ├── server.go                # gRPC server setup
+│   │   ├── cluster_service.go       # Node management logic
+│   │   ├── cluster_grpc_handler.go  # ClusterService proto adapter
+│   │   ├── compute_service.go       # Instance management logic
+│   │   ├── compute_grpc_handler.go  # ComputeService proto adapter
+│   │   └── agent_client.go          # Agent connection pool
+│   └── agent/                       # Node agent implementation
+│       ├── agent.go                 # Agent core logic
+│       └── grpc_service.go          # AgentService implementation
 ├── pkg/
 │   ├── cluster/
 │   │   ├── etcd/                 # etcd client wrapper
-│   │   ├── registry/             # Node registration
+│   │   ├── registry/             # Node and Instance registration
+│   │   │   ├── registry.go       # Node registry (etcd)
+│   │   │   ├── instance.go       # Instance registry (etcd)
+│   │   │   └── instance_types.go # Instance type definitions
 │   │   └── heartbeat/            # Health monitoring
 │   ├── compute/
 │   │   ├── driver/               # Driver interface
@@ -134,15 +164,26 @@ hypervisor/
 │   │   └── firecracker/          # MicroVM driver
 │   └── virtual-apps-and-desktop/
 │       ├── electron_client/      # VDI desktop client (Electron + Vue)
-│       └── html-web-access/      # Browser-based desktop access
+│       ├── html-web-access/      # Browser-based desktop access
+│       └── guest_drivers/        # VDI guest agents (WebRTC streaming)
 ├── control_and_manage_plane/
-│   ├── src/                      # Management Web UI (Vue 3 + MDUI)
-│   └── nginx_web/                # Envoy gRPC-Web proxy
+│   └── src/                      # Management Web UI (Vue 3 + MDUI)
+│       ├── src/
+│       │   ├── api/              # gRPC-Web transport and clients
+│       │   ├── gen/              # Generated TypeScript protobuf code
+│       │   ├── stores/           # Pinia state (cluster, compute, metrics)
+│       │   ├── components/       # Reusable components (charts, terminal)
+│       │   ├── views/            # Page views (Dashboard, Console, etc.)
+│       │   └── styles/           # Theme customization (Zixiao purple)
+│       ├── buf.yaml              # Buf protobuf configuration
+│       └── buf.gen.yaml          # Buf code generation config
 ├── clib/
 │   ├── libvirt-wrapper/          # C wrapper for libvirt
 │   ├── guest-drivers/
 │   │   ├── balloon/              # Memory balloon driver
-│   │   └── virtio/               # VirtIO ring implementation
+│   │   ├── virtio/               # VirtIO ring implementation
+│   │   └── windows/              # Windows VirtIO kernel driver (KMDF)
+│   ├── windows-host/             # Windows hypervisor host components
 │   ├── ebpf-network-accel/       # eBPF/XDP network acceleration
 │   └── ovs-dpdk-network/         # OVS-DPDK integration
 ├── configs/                      # Configuration templates
@@ -200,11 +241,15 @@ The hypervisor exposes a gRPC API with the following services:
 - `Heartbeat` - Node heartbeat
 
 ### ComputeService
-- `CreateInstance` - Create a new instance
+- `CreateInstance` - Create a new instance (schedules to agent, persists to etcd)
 - `DeleteInstance` - Delete an instance
-- `StartInstance` / `StopInstance` - Lifecycle management
-- `ListInstances` - List instances
-- `GetInstanceStats` - Get runtime statistics
+- `StartInstance` / `StopInstance` / `RestartInstance` - Lifecycle management
+- `ListInstances` - List instances with filtering
+- `GetInstanceStats` - Get runtime statistics (CPU, memory, disk, network)
+
+### AgentService (Internal)
+- Server-to-Agent gRPC communication for instance lifecycle operations
+- Console attach via bidirectional streaming
 
 ## Development
 
@@ -235,12 +280,69 @@ make build-linux
 - [x] Multi-runtime support (VM/Container/MicroVM)
 - [x] gRPC API and CLI tools
 - [x] Node registration and heartbeat monitoring
+- [x] Server-Agent gRPC communication
+- [x] Instance etcd persistence with CRUD operations
+- [x] Instance scheduling with region/zone awareness
 
-### Phase 2: Web & Desktop Clients (In Progress)
-- [x] Management Plane Web UI (Vue 3 + MDUI)
-- [x] Electron Desktop Client for VDI
-- [x] HTML5 Web Access (noVNC/SPICE)
-- [x] Envoy gRPC-Web proxy configuration
+### Phase 2: Web & Desktop Clients (Completed)
+
+#### Management Plane Web UI (`control_and_manage_plane/`)
+- [x] Vue 3 + TypeScript + Vite build system
+- [x] MDUI 2.x (Material Design 3) component library
+- [x] ConnectRPC/gRPC-Web for backend communication
+- [x] Pinia state management (cluster, compute, metrics, theme stores)
+- [x] Chart.js integration for resource monitoring dashboards
+  - ResourceGaugeChart: Doughnut chart for CPU/Memory/Disk usage
+  - ResourceTrendChart: Line chart for historical metrics
+  - InstanceDistributionChart: Pie chart for VM/Container/MicroVM breakdown
+- [x] xterm.js terminal emulator for instance console access (WebSocket)
+- [x] Dark/Light theme switching with system preference detection
+- [x] Zixiao theme customization (purple primary, gold accent colors)
+- [x] Buf-based protobuf code generation for TypeScript
+- [x] Runtime statistics display with auto-refresh (5s interval)
+- [x] Instance lifecycle management (start/stop/restart/delete)
+
+**Proto Generation:**
+```bash
+cd control_and_manage_plane/src
+npm run proto:gen  # Generates TypeScript code from api/proto/
+```
+
+**Icon Usage (MDUI):**
+```bash
+npm install @mdui/icons --save
+```
+```js
+// Import individual icons for tree-shaking
+import '@mdui/icons/dashboard.js'
+import '@mdui/icons/dns.js'
+import '@mdui/icons/memory.js'
+```
+```html
+<mdui-icon-dashboard></mdui-icon-dashboard>
+```
+
+#### Electron VDI Desktop Client (`pkg/virtual-apps-and-desktop/electron_client/`)
+- [x] Electron + Vue 3 + MDUI desktop application
+- [x] Navigation rail UI pattern for compact layout
+- [x] Desktop/Settings/About views with routing
+- [x] Native theme integration (light/dark/auto)
+- [x] IPC bridge for Electron main/renderer communication
+- [x] Cross-platform packaging (Windows/macOS/Linux)
+
+#### HTML5 Web Access (`pkg/virtual-apps-and-desktop/html-web-access/`)
+- [x] Browser-based remote desktop access
+- [x] noVNC integration for VNC protocol
+- [x] SPICE HTML5 client support
+- [x] WebSocket proxy for protocol bridging
+- [x] Responsive design for mobile/tablet access
+
+#### Envoy gRPC-Web Proxy (`control_and_manage_plane/nginx_web/`)
+- [x] gRPC-Web to gRPC protocol translation
+- [x] CORS configuration for cross-origin requests
+- [x] Routing for ClusterService and ComputeService
+- [x] Static file serving for Vue SPA
+- [x] Docker Compose deployment configuration
 
 ### Phase 3: Network Acceleration (In Progress)
 - [x] eBPF/XDP network acceleration library

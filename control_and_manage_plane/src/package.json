@@ -7,13 +7,15 @@
     "dev": "vite",
     "build": "vue-tsc && vite build",
     "preview": "vite preview",
-    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix"
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",
+    "proto:gen": "buf generate ../../api/proto"
   },
   "dependencies": {
     "vue": "^3.4.0",
     "vue-router": "^4.2.5",
     "pinia": "^2.1.7",
-    "mdui": "^2.2.1",
+    "mdui": "^2.1.4",
+    "@mdui/icons": "^2.1.4",
     "@connectrpc/connect": "^1.4.0",
     "@connectrpc/connect-web": "^1.4.0",
     "@bufbuild/protobuf": "^1.10.0",
@@ -29,6 +31,9 @@
     "typescript": "^5.3.3",
     "vue-tsc": "^2.0.0",
     "@types/node": "^20.10.0",
-    "sass": "^1.69.5"
+    "sass": "^1.69.5",
+    "@bufbuild/buf": "^1.28.0",
+    "@bufbuild/protoc-gen-es": "^1.10.0",
+    "@connectrpc/protoc-gen-connect-es": "^1.4.0"
   }
 }

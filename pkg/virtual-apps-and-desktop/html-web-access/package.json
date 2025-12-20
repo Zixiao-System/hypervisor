@@ -9,17 +9,18 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.4.0",
-    "vue-router": "^4.2.5",
+    "@mdui/icons": "^1.0.3",
+    "@novnc/novnc": "^1.4.0",
+    "mdui": "^2.1.4",
     "pinia": "^2.1.7",
-    "mdui": "^2.2.1",
-    "@novnc/novnc": "^1.4.0"
+    "vue": "^3.4.0",
+    "vue-router": "^4.2.5"
   },
   "devDependencies": {
+    "@types/node": "^20.10.0",
     "@vitejs/plugin-vue": "^5.0.0",
-    "vite": "^5.0.10",
     "typescript": "^5.3.3",
-    "vue-tsc": "^2.0.0",
-    "@types/node": "^20.10.0"
+    "vite": "^5.0.10",
+    "vue-tsc": "^2.0.0"
   }
 }

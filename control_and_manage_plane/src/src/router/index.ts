@@ -39,6 +39,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'Instance Detail' }
   },
   {
+    path: '/instances/:id/console',
+    name: 'Console',
+    component: () => import('../views/ConsoleView.vue'),
+    meta: { title: 'Console' }
+  },
+  {
     path: '/settings',
     name: 'Settings',
     component: () => import('../views/SettingsView.vue'),

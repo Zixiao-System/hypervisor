@@ -1,7 +1,11 @@
 <script setup lang="ts">
-import { onMounted, computed } from 'vue'
+import { onMounted, onUnmounted, computed, ref } from 'vue'
 import { useClusterStore } from '../stores/cluster'
 import { useComputeStore } from '../stores/compute'
+import { useMetricsStore } from '../stores/metrics'
+import ResourceGaugeChart from '../components/charts/ResourceGaugeChart.vue'
+import ResourceTrendChart from '../components/charts/ResourceTrendChart.vue'
+import InstanceDistributionChart from '../components/charts/InstanceDistributionChart.vue'
 
 // Import MDUI icons
 import '@mdui/icons/dns.js'
@@ -11,6 +15,9 @@ import '@mdui/icons/speed.js'
 
 const clusterStore = useClusterStore()
 const computeStore = useComputeStore()
+const metricsStore = useMetricsStore()
+
+let metricsInterval: number | null = null
 
 const cpuUsagePercent = computed(() => {
   if (!clusterStore.totalCapacity.cpuCores) return 0
@@ -35,10 +42,30 @@ function formatBytes(bytes: number): string {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
 }
 
+function collectMetrics() {
+  metricsStore.addCpuDataPoint(cpuUsagePercent.value)
+  metricsStore.addMemoryDataPoint(memoryUsagePercent.value)
+  metricsStore.addDiskDataPoint(diskUsagePercent.value)
+}
+
 onMounted(() => {
   clusterStore.fetchClusterInfo()
   clusterStore.fetchNodes()
   computeStore.fetchInstances()
+
+  // Collect initial metrics
+  collectMetrics()
+
+  // Poll for metrics every 5 seconds
+  metricsInterval = window.setInterval(() => {
+    collectMetrics()
+  }, 5000)
+})
+
+onUnmounted(() => {
+  if (metricsInterval) {
+    clearInterval(metricsInterval)
+  }
 })
 </script>
 
@@ -89,77 +116,84 @@ onMounted(() => {
       </mdui-card>
     </div>
 
-    <!-- Resource Usage -->
+    <!-- Resource Gauges -->
     <h2 class="section-title">Resource Usage</h2>
-    <mdui-card class="resource-card">
-      <div class="resource-item">
-        <div class="resource-header">
-          <span>CPU</span>
-          <span>{{ cpuUsagePercent }}%</span>
-        </div>
-        <div class="resource-bar">
-          <div class="resource-bar-fill cpu" :style="{ width: cpuUsagePercent + '%' }"></div>
-        </div>
-      </div>
-
-      <div class="resource-item">
-        <div class="resource-header">
-          <span>Memory</span>
-          <span>{{ memoryUsagePercent }}%</span>
-        </div>
-        <div class="resource-bar">
-          <div class="resource-bar-fill memory" :style="{ width: memoryUsagePercent + '%' }"></div>
-        </div>
-      </div>
-
-      <div class="resource-item">
-        <div class="resource-header">
-          <span>Disk</span>
-          <span>{{ diskUsagePercent }}%</span>
-        </div>
-        <div class="resource-bar">
-          <div class="resource-bar-fill disk" :style="{ width: diskUsagePercent + '%' }"></div>
-        </div>
+    <mdui-card class="gauge-card">
+      <div class="gauge-grid">
+        <ResourceGaugeChart
+          label="CPU"
+          :used="clusterStore.totalAllocated.cpuCores"
+          :total="clusterStore.totalCapacity.cpuCores"
+          color="#8B5CF6"
+        />
+        <ResourceGaugeChart
+          label="Memory"
+          :used="clusterStore.totalAllocated.memoryBytes"
+          :total="clusterStore.totalCapacity.memoryBytes"
+          color="#10B981"
+          unit="bytes"
+        />
+        <ResourceGaugeChart
+          label="Disk"
+          :used="clusterStore.totalAllocated.diskBytes"
+          :total="clusterStore.totalCapacity.diskBytes"
+          color="#F59E0B"
+          unit="bytes"
+        />
       </div>
     </mdui-card>
 
-    <!-- Instance Types -->
-    <h2 class="section-title">Instances by Type</h2>
-    <div class="stats-grid">
-      <mdui-card class="type-card">
-        <div class="type-label">VMs</div>
-        <div class="type-value">{{ computeStore.vmInstances.length }}</div>
+    <!-- Resource Trends -->
+    <h2 class="section-title">Resource Trends</h2>
+    <div class="trend-grid">
+      <mdui-card class="trend-card">
+        <ResourceTrendChart
+          title="CPU Usage"
+          :dataPoints="metricsStore.cpuChartData"
+          :labels="metricsStore.cpuChartLabels"
+          color="#8B5CF6"
+        />
       </mdui-card>
-
-      <mdui-card class="type-card">
-        <div class="type-label">Containers</div>
-        <div class="type-value">{{ computeStore.containerInstances.length }}</div>
-      </mdui-card>
-
-      <mdui-card class="type-card">
-        <div class="type-label">MicroVMs</div>
-        <div class="type-value">{{ computeStore.microvmInstances.length }}</div>
+      <mdui-card class="trend-card">
+        <ResourceTrendChart
+          title="Memory Usage"
+          :dataPoints="metricsStore.memoryChartData"
+          :labels="metricsStore.memoryChartLabels"
+          color="#10B981"
+        />
       </mdui-card>
     </div>
 
-    <!-- Cluster Info Card -->
-    <h2 class="section-title">Cluster Information</h2>
-    <mdui-card v-if="clusterStore.clusterInfo" class="info-card">
-      <mdui-list>
-        <mdui-list-item>
-          <span slot="headline">Cluster ID</span>
-          <span slot="description">{{ clusterStore.clusterInfo.clusterId }}</span>
-        </mdui-list-item>
-        <mdui-list-item>
-          <span slot="headline">Cluster Name</span>
-          <span slot="description">{{ clusterStore.clusterInfo.clusterName }}</span>
-        </mdui-list-item>
-        <mdui-list-item>
-          <span slot="headline">Version</span>
-          <span slot="description">{{ clusterStore.clusterInfo.version }}</span>
-        </mdui-list-item>
-      </mdui-list>
-    </mdui-card>
+    <!-- Instance Distribution -->
+    <h2 class="section-title">Instances</h2>
+    <div class="distribution-grid">
+      <mdui-card class="distribution-card">
+        <InstanceDistributionChart
+          :vmCount="computeStore.vmInstances.length"
+          :containerCount="computeStore.containerInstances.length"
+          :microvmCount="computeStore.microvmInstances.length"
+        />
+      </mdui-card>
+
+      <!-- Cluster Info Card -->
+      <mdui-card v-if="clusterStore.clusterInfo" class="info-card">
+        <div class="info-header">Cluster Information</div>
+        <mdui-list>
+          <mdui-list-item>
+            <span slot="headline">Cluster ID</span>
+            <span slot="description">{{ clusterStore.clusterInfo.clusterId }}</span>
+          </mdui-list-item>
+          <mdui-list-item>
+            <span slot="headline">Cluster Name</span>
+            <span slot="description">{{ clusterStore.clusterInfo.clusterName }}</span>
+          </mdui-list-item>
+          <mdui-list-item>
+            <span slot="headline">Version</span>
+            <span slot="description">{{ clusterStore.clusterInfo.version }}</span>
+          </mdui-list-item>
+        </mdui-list>
+      </mdui-card>
+    </div>
   </div>
 </template>
 
@@ -184,48 +218,67 @@ onMounted(() => {
   color: var(--zixiao-purple);
 }
 
-.resource-card {
-  padding: 24px;
+.gauge-card {
+  padding: 32px;
   margin-bottom: 24px;
 }
 
-.resource-item {
-  margin-bottom: 20px;
+.gauge-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 48px;
+  justify-items: center;
 }
 
-.resource-item:last-child {
-  margin-bottom: 0;
+@media (max-width: 768px) {
+  .gauge-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
 }
 
-.resource-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  font-weight: 500;
+.trend-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  margin-bottom: 24px;
 }
 
-.type-card {
+@media (max-width: 768px) {
+  .trend-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.trend-card {
   padding: 24px;
-  text-align: center;
 }
 
-.type-label {
-  font-size: 14px;
-  color: rgb(var(--mdui-color-on-surface-variant-light));
-  margin-bottom: 8px;
+.distribution-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
 }
 
-.mdui-theme-dark .type-label {
-  color: rgb(var(--mdui-color-on-surface-variant-dark));
+@media (max-width: 768px) {
+  .distribution-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-.type-value {
-  font-size: 36px;
-  font-weight: 700;
-  color: var(--zixiao-purple);
+.distribution-card {
+  padding: 24px;
 }
 
 .info-card {
   padding: 0;
+}
+
+.info-header {
+  padding: 16px 24px;
+  font-weight: 500;
+  font-size: 14px;
+  border-bottom: 1px solid var(--mdui-color-outline-variant);
 }
 </style>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useComputeStore } from '../stores/compute'
+import { useComputeStore, type InstanceStats } from '../stores/compute'
 
 // Import MDUI icons
 import '@mdui/icons/arrow-back.js'
@@ -10,6 +10,9 @@ import '@mdui/icons/stop.js'
 import '@mdui/icons/restart-alt.js'
 import '@mdui/icons/delete.js'
 import '@mdui/icons/terminal.js'
+import '@mdui/icons/memory.js'
+import '@mdui/icons/storage.js'
+import '@mdui/icons/wifi.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -17,6 +20,11 @@ const computeStore = useComputeStore()
 
 const instanceId = computed(() => route.params.id as string)
 const instance = computed(() => computeStore.getInstanceById(instanceId.value))
+
+// Stats state
+const stats = ref<InstanceStats | null>(null)
+const statsLoading = ref(false)
+let statsInterval: ReturnType<typeof setInterval> | null = null
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 B'
@@ -28,6 +36,10 @@ function formatBytes(bytes: number): string {
 
 function formatDate(date: Date): string {
   return new Date(date).toLocaleString()
+}
+
+function formatPercent(value: number): string {
+  return value.toFixed(1) + '%'
 }
 
 function goBack() {
@@ -46,6 +58,12 @@ async function stopInstance() {
   }
 }
 
+async function restartInstance() {
+  if (instance.value) {
+    await computeStore.restartInstance(instance.value.id)
+  }
+}
+
 async function deleteInstance() {
   if (instance.value && confirm(`Are you sure you want to delete ${instance.value.name}?`)) {
     await computeStore.deleteInstance(instance.value.id)
@@ -54,13 +72,48 @@ async function deleteInstance() {
 }
 
 function openConsole() {
-  // TODO: Implement console view
-  alert('Console feature coming soon!')
+  router.push(`/instances/${instanceId.value}/console`)
 }
+
+async function fetchStats() {
+  if (!instance.value || instance.value.state !== 'running') {
+    stats.value = null
+    return
+  }
+
+  statsLoading.value = true
+  try {
+    stats.value = await computeStore.getInstanceStats(instanceId.value)
+  } finally {
+    statsLoading.value = false
+  }
+}
+
+// Watch for instance state changes to start/stop stats polling
+watch(() => instance.value?.state, (newState) => {
+  if (newState === 'running') {
+    fetchStats()
+    if (!statsInterval) {
+      statsInterval = setInterval(fetchStats, 5000) // Refresh every 5 seconds
+    }
+  } else {
+    stats.value = null
+    if (statsInterval) {
+      clearInterval(statsInterval)
+      statsInterval = null
+    }
+  }
+}, { immediate: true })
 
 onMounted(() => {
   if (!computeStore.instances.length) {
     computeStore.fetchInstances()
+  }
+})
+
+onUnmounted(() => {
+  if (statsInterval) {
+    clearInterval(statsInterval)
   }
 })
 </script>
@@ -97,6 +150,10 @@ onMounted(() => {
               <mdui-icon-stop slot="icon"></mdui-icon-stop>
               Stop
             </mdui-button>
+            <mdui-button v-if="instance.state === 'running'" variant="tonal" @click="restartInstance">
+              <mdui-icon-restart-alt slot="icon"></mdui-icon-restart-alt>
+              Restart
+            </mdui-button>
             <mdui-button v-if="instance.state === 'running'" variant="tonal" @click="openConsole">
               <mdui-icon-terminal slot="icon"></mdui-icon-terminal>
               Console
@@ -106,6 +163,70 @@ onMounted(() => {
               Delete
             </mdui-button>
           </div>
+        </div>
+      </mdui-card>
+
+      <!-- Runtime Statistics (only when running) -->
+      <mdui-card v-if="instance.state === 'running'" class="stats-card">
+        <h3 class="card-title">Runtime Statistics</h3>
+        <div v-if="statsLoading && !stats" class="stats-loading">
+          <mdui-circular-progress></mdui-circular-progress>
+        </div>
+        <div v-else-if="stats" class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-header">
+              <mdui-icon-memory></mdui-icon-memory>
+              <span>CPU Usage</span>
+            </div>
+            <div class="stat-value">{{ formatPercent(stats.cpuUsagePercent) }}</div>
+            <mdui-linear-progress :value="stats.cpuUsagePercent / 100"></mdui-linear-progress>
+          </div>
+          <div class="stat-item">
+            <div class="stat-header">
+              <mdui-icon-memory></mdui-icon-memory>
+              <span>Memory</span>
+            </div>
+            <div class="stat-value">{{ formatBytes(stats.memoryUsedBytes) }}</div>
+            <div class="stat-sub">Cache: {{ formatBytes(stats.memoryCacheBytes) }}</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-header">
+              <mdui-icon-storage></mdui-icon-storage>
+              <span>Disk I/O</span>
+            </div>
+            <div class="stat-value-dual">
+              <div>
+                <span class="label">Read:</span>
+                <span>{{ formatBytes(stats.diskReadBytes) }}</span>
+              </div>
+              <div>
+                <span class="label">Write:</span>
+                <span>{{ formatBytes(stats.diskWriteBytes) }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-header">
+              <mdui-icon-wifi></mdui-icon-wifi>
+              <span>Network</span>
+            </div>
+            <div class="stat-value-dual">
+              <div>
+                <span class="label">RX:</span>
+                <span>{{ formatBytes(stats.networkRxBytes) }}</span>
+              </div>
+              <div>
+                <span class="label">TX:</span>
+                <span>{{ formatBytes(stats.networkTxBytes) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-else class="stats-empty">
+          No statistics available
+        </div>
+        <div v-if="stats" class="stats-footer">
+          Last updated: {{ formatDate(stats.collectedAt) }}
         </div>
       </mdui-card>
 
@@ -158,7 +279,7 @@ onMounted(() => {
           </div>
           <div class="resource-item" v-for="disk in instance.spec.disks" :key="disk.name">
             <span class="resource-label">Disk ({{ disk.name }})</span>
-            <span class="resource-value">{{ disk.sizeGb }} GB {{ disk.type.toUpperCase() }}</span>
+            <span class="resource-value">{{ formatBytes(disk.sizeBytes) }} {{ disk.type.toUpperCase() }}</span>
           </div>
         </div>
       </mdui-card>
@@ -167,22 +288,22 @@ onMounted(() => {
       <mdui-card class="info-card">
         <h3 class="card-title">Network</h3>
         <mdui-list>
-          <mdui-list-item v-if="instance.spec.network.networkId">
+          <mdui-list-item v-if="instance.spec.network?.networkId">
             <span slot="headline">Network ID</span>
             <span slot="description">{{ instance.spec.network.networkId }}</span>
           </mdui-list-item>
           <mdui-list-item>
             <span slot="headline">Public IP</span>
-            <span slot="description">{{ instance.spec.network.assignPublicIp ? 'Yes' : 'No' }}</span>
+            <span slot="description">{{ instance.spec.network?.assignPublicIp ? 'Yes' : 'No' }}</span>
           </mdui-list-item>
         </mdui-list>
       </mdui-card>
 
       <!-- Metadata -->
-      <mdui-card v-if="Object.keys(instance.metadata).length > 0" class="info-card">
-        <h3 class="card-title">Metadata</h3>
+      <mdui-card v-if="instance.metadata?.labels && Object.keys(instance.metadata.labels).length > 0" class="info-card">
+        <h3 class="card-title">Labels</h3>
         <mdui-list>
-          <mdui-list-item v-for="(value, key) in instance.metadata" :key="key">
+          <mdui-list-item v-for="(value, key) in instance.metadata.labels" :key="key">
             <span slot="headline">{{ key }}</span>
             <span slot="description">{{ value }}</span>
           </mdui-list-item>
@@ -240,6 +361,76 @@ onMounted(() => {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.stats-card {
+  margin-bottom: 24px;
+  padding: 24px;
+}
+
+.stats-loading,
+.stats-empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100px;
+  opacity: 0.7;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 24px;
+}
+
+.stat-item {
+  padding: 16px;
+  background: rgba(var(--mdui-color-surface-container-rgb), 0.5);
+  border-radius: 12px;
+}
+
+.stat-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  opacity: 0.8;
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--zixiao-purple);
+  margin-bottom: 8px;
+}
+
+.stat-sub {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.stat-value-dual {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-value-dual div {
+  display: flex;
+  gap: 8px;
+}
+
+.stat-value-dual .label {
+  opacity: 0.7;
+  min-width: 45px;
+}
+
+.stats-footer {
+  margin-top: 16px;
+  font-size: 12px;
+  opacity: 0.6;
+  text-align: right;
 }
 
 .info-card {
