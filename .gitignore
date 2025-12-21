@@ -11,7 +11,8 @@ bin/
 *.a
 coverage.out
 coverage.html
-
+hypervisor-ctl
+hypervisor-server
 # Generated files
 api/gen/
 

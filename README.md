@@ -132,6 +132,7 @@ hypervisor/
 │   │   ├── common.proto          # Shared types
 │   │   ├── cluster.proto         # ClusterService definition
 │   │   ├── compute.proto         # ComputeService definition
+│   │   ├── network.proto         # NetworkService definition
 │   │   └── agent.proto           # AgentService (internal) definition
 │   └── gen/                      # Generated Go code
 ├── cmd/
@@ -145,6 +146,7 @@ hypervisor/
 │   │   ├── cluster_grpc_handler.go  # ClusterService proto adapter
 │   │   ├── compute_service.go       # Instance management logic
 │   │   ├── compute_grpc_handler.go  # ComputeService proto adapter
+│   │   ├── network_service.go       # SDN and network logic
 │   │   └── agent_client.go          # Agent connection pool
 │   └── agent/                       # Node agent implementation
 │       ├── agent.go                 # Agent core logic
@@ -162,6 +164,22 @@ hypervisor/
 │   │   ├── libvirt/              # KVM/QEMU driver
 │   │   ├── containerd/           # Container driver
 │   │   └── firecracker/          # MicroVM driver
+│   ├── network/
+│   │   ├── types.go              # Network data structures
+│   │   ├── sdn/                  # SDN controller
+│   │   │   ├── controller.go     # Network/Port/SecurityGroup management
+│   │   │   └── flow_manager.go   # OpenFlow rule management
+│   │   ├── overlay/              # VXLAN overlay networking
+│   │   │   ├── vxlan.go          # VXLAN manager
+│   │   │   └── vtep.go           # VTEP mesh management
+│   │   ├── ipam/                 # IP Address Management
+│   │   │   └── ipam.go           # Subnet and IP allocation
+│   │   ├── router/               # L3 routing
+│   │   │   ├── dvr.go            # Distributed Virtual Router
+│   │   │   └── arp_proxy.go      # ARP proxy
+│   │   └── cgo/                  # CGO bindings
+│   │       ├── ovs.go            # OVS integration
+│   │       └── ebpf.go           # eBPF acceleration
 │   └── virtual-apps-and-desktop/
 │       ├── electron_client/      # VDI desktop client (Electron + Vue)
 │       ├── html-web-access/      # Browser-based desktop access
@@ -250,6 +268,17 @@ The hypervisor exposes a gRPC API with the following services:
 ### AgentService (Internal)
 - Server-to-Agent gRPC communication for instance lifecycle operations
 - Console attach via bidirectional streaming
+
+### NetworkService
+- `CreateNetwork` / `GetNetwork` / `ListNetworks` / `DeleteNetwork` - Virtual network CRUD
+- `CreateSubnet` / `GetSubnet` / `ListSubnets` / `DeleteSubnet` - Subnet management
+- `AllocateIP` / `ReleaseIP` / `ListAllocations` - IPAM operations
+- `CreatePort` / `GetPort` / `ListPorts` / `DeletePort` - Virtual port management
+- `BindPort` / `UnbindPort` - Port-to-instance binding
+- `CreateSecurityGroup` / `AddSecurityRule` / `RemoveSecurityRule` - Security groups
+- `CreateRouter` / `AddRouterInterface` / `AddRoute` - Virtual router management
+- `CreateFloatingIP` / `AssociateFloatingIP` / `DisassociateFloatingIP` - Floating IP
+- `ListVTEPs` - VXLAN Tunnel Endpoint discovery
 
 ## Development
 
@@ -344,11 +373,16 @@ import '@mdui/icons/memory.js'
 - [x] Static file serving for Vue SPA
 - [x] Docker Compose deployment configuration
 
-### Phase 3: Network Acceleration (In Progress)
+### Phase 3: Network & SDN (Completed)
 - [x] eBPF/XDP network acceleration library
 - [x] OVS-DPDK integration with vhost-user
-- [ ] SDN/VXLAN overlay networking
-- [ ] Distributed virtual router
+- [x] SDN controller with OpenFlow rule management
+- [x] VXLAN overlay networking with VTEP mesh
+- [x] IPAM (IP Address Management) with subnet and allocation support
+- [x] Distributed Virtual Router (DVR) with ARP proxy
+- [x] Security groups with flow-based enforcement
+- [x] Floating IP and NAT support
+- [x] NetworkService gRPC API
 
 ### Phase 4: Guest Drivers (Planned)
 - [x] VirtIO ring library (virtio_ring.c)

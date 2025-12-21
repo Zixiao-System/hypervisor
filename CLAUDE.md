@@ -74,6 +74,11 @@ make run-agent          # Start agent (uses configs/agent.yaml)
 - `pkg/compute/libvirt/` - KVM/QEMU driver via libvirt (CGO)
 - `pkg/compute/containerd/` - Container runtime driver
 - `pkg/compute/firecracker/` - MicroVM driver
+- `pkg/network/sdn/` - SDN controller for network/port/security group management
+- `pkg/network/overlay/` - VXLAN overlay with VTEP mesh management
+- `pkg/network/ipam/` - IP Address Management (subnet/allocation)
+- `pkg/network/router/` - Distributed Virtual Router (DVR) and ARP proxy
+- `pkg/network/cgo/` - OVS and eBPF CGO bindings
 - `internal/server/` - Server implementation (gRPC services)
 - `internal/agent/` - Agent implementation (runtime management)
 
