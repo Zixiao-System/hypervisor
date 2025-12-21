@@ -25,7 +25,7 @@ DriverEntry(
     // Allocate the driver configuration object
     WDF_DRIVER_CONFIG config;
 
-    // Print "Hello World" for DriverEntry
+    // Print "Stub" for DriverEntry
     KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Zixiao-Windows-VirtIO-Driver: DriverEntry\n"));
 
     // Initialize the driver configuration object to register the
@@ -59,7 +59,7 @@ KmdfHelloWorldEvtDeviceAdd(
     // Allocate the device object
     WDFDEVICE hDevice;
 
-    // Print "Hello World"
+    // Print "Stub"
     KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Zixiao-Windows-VirtIO-Driver: KmdfHelloWorldEvtDeviceAdd\n"));
 
     // Create the device object

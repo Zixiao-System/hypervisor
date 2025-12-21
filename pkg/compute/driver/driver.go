@@ -80,7 +80,39 @@ type NetworkSpec struct {
 	AssignPublicIP bool     `json:"assign_public_ip,omitempty"`
 	MACAddress     string   `json:"mac_address,omitempty"`
 	IPAddress      string   `json:"ip_address,omitempty"`
+
+	// VXLAN overlay networking
+	OverlayType OverlayType `json:"overlay_type,omitempty"` // vxlan, vlan, bridge
+	VNI         uint32      `json:"vni,omitempty"`          // VXLAN Network Identifier
+	GatewayIP   string      `json:"gateway_ip,omitempty"`   // Subnet gateway
+	Subnet      string      `json:"subnet,omitempty"`       // CIDR notation
+	MTU         uint16      `json:"mtu,omitempty"`          // Network MTU
+
+	// Port binding configuration
+	PortID       string          `json:"port_id,omitempty"`       // Pre-created port ID
+	BindingType  PortBindingType `json:"binding_type,omitempty"`  // ovs, vhost-user, sriov
+	DeviceName   string          `json:"device_name,omitempty"`   // tap0, veth0, etc.
 }
+
+// OverlayType represents the type of network overlay.
+type OverlayType string
+
+const (
+	OverlayTypeNone   OverlayType = ""
+	OverlayTypeVXLAN  OverlayType = "vxlan"
+	OverlayTypeVLAN   OverlayType = "vlan"
+	OverlayTypeBridge OverlayType = "bridge"
+)
+
+// PortBindingType represents how a port is bound to an instance.
+type PortBindingType string
+
+const (
+	PortBindingOVS        PortBindingType = "ovs"
+	PortBindingLinuxBridge PortBindingType = "linuxbridge"
+	PortBindingVhostUser  PortBindingType = "vhost-user"
+	PortBindingSRIOV      PortBindingType = "sriov"
+)
 
 // DiskSpec defines disk configuration.
 type DiskSpec struct {

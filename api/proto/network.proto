@@ -1,0 +1,591 @@
+syntax = "proto3";
+
+package hypervisor.v1;
+
+option go_package = "hypervisor/api/gen/v1;v1";
+
+import "google/protobuf/timestamp.proto";
+import "common.proto";
+
+// ============================================================================
+// Network Enums
+// ============================================================================
+
+enum NetworkType {
+    NETWORK_TYPE_UNSPECIFIED = 0;
+    NETWORK_TYPE_VXLAN = 1;
+    NETWORK_TYPE_VLAN = 2;
+    NETWORK_TYPE_BRIDGE = 3;
+    NETWORK_TYPE_FLAT = 4;
+}
+
+enum PortBindingType {
+    PORT_BINDING_UNSPECIFIED = 0;
+    PORT_BINDING_OVS = 1;
+    PORT_BINDING_LINUX_BRIDGE = 2;
+    PORT_BINDING_VHOST_USER = 3;
+    PORT_BINDING_SRIOV = 4;
+}
+
+enum SecurityRuleDirection {
+    SECURITY_RULE_DIRECTION_UNSPECIFIED = 0;
+    SECURITY_RULE_DIRECTION_INGRESS = 1;
+    SECURITY_RULE_DIRECTION_EGRESS = 2;
+}
+
+enum EtherType {
+    ETHER_TYPE_UNSPECIFIED = 0;
+    ETHER_TYPE_IPV4 = 1;
+    ETHER_TYPE_IPV6 = 2;
+}
+
+// ============================================================================
+// Network Messages
+// ============================================================================
+
+message Network {
+    string id = 1;
+    string name = 2;
+    NetworkType type = 3;
+    uint32 vni = 4;                     // VXLAN Network Identifier
+    uint32 vlan_id = 5;                 // VLAN ID
+    uint32 mtu = 6;                     // Network MTU
+    bool admin_state = 7;               // Administrative state
+    bool shared = 8;                    // Shared across tenants
+    bool external = 9;                  // Connected to external network
+    string tenant_id = 10;              // Owner tenant
+    Metadata metadata = 11;
+    google.protobuf.Timestamp created_at = 12;
+    google.protobuf.Timestamp updated_at = 13;
+}
+
+message Subnet {
+    string id = 1;
+    string name = 2;
+    string network_id = 3;
+    string cidr = 4;                    // e.g., "10.0.0.0/24"
+    string gateway_ip = 5;              // e.g., "10.0.0.1"
+    repeated string dns_servers = 6;
+    repeated IPPool allocation_pools = 7;
+    bool enable_dhcp = 8;
+    bool ipv6 = 9;
+    google.protobuf.Timestamp created_at = 10;
+    google.protobuf.Timestamp updated_at = 11;
+}
+
+message IPPool {
+    string start = 1;
+    string end = 2;
+}
+
+message IPAllocation {
+    string id = 1;
+    string subnet_id = 2;
+    string ip_address = 3;
+    string mac_address = 4;
+    string instance_id = 5;
+    string port_id = 6;
+    string hostname = 7;
+    string status = 8;
+    google.protobuf.Timestamp created_at = 9;
+}
+
+message Port {
+    string id = 1;
+    string name = 2;
+    string network_id = 3;
+    string subnet_id = 4;
+    string mac_address = 5;
+    string ip_address = 6;
+    string instance_id = 7;
+    string node_id = 8;
+    string device_name = 9;
+    repeated string security_groups = 10;
+    bool admin_state = 11;
+    string status = 12;
+    PortBindingType binding_type = 13;
+    google.protobuf.Timestamp created_at = 14;
+    google.protobuf.Timestamp updated_at = 15;
+}
+
+message SecurityGroup {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    string tenant_id = 4;
+    repeated SecurityGroupRule rules = 5;
+    google.protobuf.Timestamp created_at = 6;
+    google.protobuf.Timestamp updated_at = 7;
+}
+
+message SecurityGroupRule {
+    string id = 1;
+    string security_group_id = 2;
+    SecurityRuleDirection direction = 3;
+    EtherType ether_type = 4;
+    string protocol = 5;                // tcp, udp, icmp, any
+    uint32 port_range_min = 6;
+    uint32 port_range_max = 7;
+    string remote_ip_prefix = 8;        // CIDR
+    string remote_group_id = 9;         // Reference to another SG
+}
+
+message Router {
+    string id = 1;
+    string name = 2;
+    string tenant_id = 3;
+    bool admin_state = 4;
+    string status = 5;
+    ExternalGateway external_gateway = 6;
+    repeated Route routes = 7;
+    bool distributed = 8;               // DVR mode
+    google.protobuf.Timestamp created_at = 9;
+    google.protobuf.Timestamp updated_at = 10;
+}
+
+message ExternalGateway {
+    string network_id = 1;
+    bool enable_snat = 2;
+    repeated FixedIP external_fixed_ips = 3;
+}
+
+message FixedIP {
+    string subnet_id = 1;
+    string ip_address = 2;
+}
+
+message Route {
+    string destination = 1;             // CIDR
+    string nexthop = 2;                 // IP address
+}
+
+message FloatingIP {
+    string id = 1;
+    string floating_ip = 2;
+    string floating_network_id = 3;
+    string fixed_ip = 4;
+    string port_id = 5;
+    string tenant_id = 6;
+    string status = 7;
+    google.protobuf.Timestamp created_at = 8;
+    google.protobuf.Timestamp updated_at = 9;
+}
+
+message VTEP {
+    string node_id = 1;
+    string ip = 2;
+    uint32 port = 3;
+    string interface = 4;
+    string status = 5;
+    google.protobuf.Timestamp updated_at = 6;
+}
+
+// ============================================================================
+// Network Service Requests/Responses
+// ============================================================================
+
+// Network CRUD
+message CreateNetworkRequest {
+    string name = 1;
+    NetworkType type = 2;
+    uint32 vni = 3;
+    uint32 vlan_id = 4;
+    uint32 mtu = 5;
+    bool shared = 6;
+    bool external = 7;
+    string tenant_id = 8;
+    Metadata metadata = 9;
+}
+
+message CreateNetworkResponse {
+    Network network = 1;
+}
+
+message GetNetworkRequest {
+    string network_id = 1;
+}
+
+message GetNetworkResponse {
+    Network network = 1;
+}
+
+message ListNetworksRequest {
+    string tenant_id = 1;
+    NetworkType type = 2;
+    int32 page_size = 3;
+    string page_token = 4;
+}
+
+message ListNetworksResponse {
+    repeated Network networks = 1;
+    string next_page_token = 2;
+}
+
+message DeleteNetworkRequest {
+    string network_id = 1;
+}
+
+message DeleteNetworkResponse {}
+
+// Subnet CRUD
+message CreateSubnetRequest {
+    string name = 1;
+    string network_id = 2;
+    string cidr = 3;
+    string gateway_ip = 4;
+    repeated string dns_servers = 5;
+    repeated IPPool allocation_pools = 6;
+    bool enable_dhcp = 7;
+}
+
+message CreateSubnetResponse {
+    Subnet subnet = 1;
+}
+
+message GetSubnetRequest {
+    string subnet_id = 1;
+}
+
+message GetSubnetResponse {
+    Subnet subnet = 1;
+}
+
+message ListSubnetsRequest {
+    string network_id = 1;
+    int32 page_size = 2;
+    string page_token = 3;
+}
+
+message ListSubnetsResponse {
+    repeated Subnet subnets = 1;
+    string next_page_token = 2;
+}
+
+message DeleteSubnetRequest {
+    string subnet_id = 1;
+}
+
+message DeleteSubnetResponse {}
+
+// IP Allocation
+message AllocateIPRequest {
+    string subnet_id = 1;
+    string ip_address = 2;              // Optional specific IP
+    string mac_address = 3;
+    string instance_id = 4;
+    string port_id = 5;
+    string hostname = 6;
+}
+
+message AllocateIPResponse {
+    IPAllocation allocation = 1;
+}
+
+message ReleaseIPRequest {
+    string subnet_id = 1;
+    string ip_address = 2;
+}
+
+message ReleaseIPResponse {}
+
+message ListAllocationsRequest {
+    string subnet_id = 1;
+}
+
+message ListAllocationsResponse {
+    repeated IPAllocation allocations = 1;
+}
+
+// Port CRUD
+message CreatePortRequest {
+    string name = 1;
+    string network_id = 2;
+    string subnet_id = 3;
+    string mac_address = 4;
+    string ip_address = 5;
+    repeated string security_groups = 6;
+    PortBindingType binding_type = 7;
+}
+
+message CreatePortResponse {
+    Port port = 1;
+}
+
+message GetPortRequest {
+    string port_id = 1;
+}
+
+message GetPortResponse {
+    Port port = 1;
+}
+
+message ListPortsRequest {
+    string network_id = 1;
+    string instance_id = 2;
+    string node_id = 3;
+    int32 page_size = 4;
+    string page_token = 5;
+}
+
+message ListPortsResponse {
+    repeated Port ports = 1;
+    string next_page_token = 2;
+}
+
+message DeletePortRequest {
+    string port_id = 1;
+}
+
+message DeletePortResponse {}
+
+message BindPortRequest {
+    string port_id = 1;
+    string instance_id = 2;
+    string node_id = 3;
+    string device_name = 4;
+}
+
+message BindPortResponse {
+    Port port = 1;
+}
+
+message UnbindPortRequest {
+    string port_id = 1;
+}
+
+message UnbindPortResponse {
+    Port port = 1;
+}
+
+// Security Group CRUD
+message CreateSecurityGroupRequest {
+    string name = 1;
+    string description = 2;
+    string tenant_id = 3;
+}
+
+message CreateSecurityGroupResponse {
+    SecurityGroup security_group = 1;
+}
+
+message GetSecurityGroupRequest {
+    string security_group_id = 1;
+}
+
+message GetSecurityGroupResponse {
+    SecurityGroup security_group = 1;
+}
+
+message ListSecurityGroupsRequest {
+    string tenant_id = 1;
+}
+
+message ListSecurityGroupsResponse {
+    repeated SecurityGroup security_groups = 1;
+}
+
+message DeleteSecurityGroupRequest {
+    string security_group_id = 1;
+}
+
+message DeleteSecurityGroupResponse {}
+
+message AddSecurityRuleRequest {
+    string security_group_id = 1;
+    SecurityRuleDirection direction = 2;
+    EtherType ether_type = 3;
+    string protocol = 4;
+    uint32 port_range_min = 5;
+    uint32 port_range_max = 6;
+    string remote_ip_prefix = 7;
+    string remote_group_id = 8;
+}
+
+message AddSecurityRuleResponse {
+    SecurityGroupRule rule = 1;
+}
+
+message RemoveSecurityRuleRequest {
+    string security_group_id = 1;
+    string rule_id = 2;
+}
+
+message RemoveSecurityRuleResponse {}
+
+// Router CRUD
+message CreateRouterRequest {
+    string name = 1;
+    string tenant_id = 2;
+    bool distributed = 3;
+    ExternalGateway external_gateway = 4;
+}
+
+message CreateRouterResponse {
+    Router router = 1;
+}
+
+message GetRouterRequest {
+    string router_id = 1;
+}
+
+message GetRouterResponse {
+    Router router = 1;
+}
+
+message ListRoutersRequest {
+    string tenant_id = 1;
+}
+
+message ListRoutersResponse {
+    repeated Router routers = 1;
+}
+
+message DeleteRouterRequest {
+    string router_id = 1;
+}
+
+message DeleteRouterResponse {}
+
+message AddRouterInterfaceRequest {
+    string router_id = 1;
+    string subnet_id = 2;
+}
+
+message AddRouterInterfaceResponse {
+    string port_id = 1;
+}
+
+message RemoveRouterInterfaceRequest {
+    string router_id = 1;
+    string subnet_id = 2;
+}
+
+message RemoveRouterInterfaceResponse {}
+
+message AddRouteRequest {
+    string router_id = 1;
+    string destination = 2;
+    string nexthop = 3;
+}
+
+message AddRouteResponse {
+    Router router = 1;
+}
+
+message RemoveRouteRequest {
+    string router_id = 1;
+    string destination = 2;
+}
+
+message RemoveRouteResponse {
+    Router router = 1;
+}
+
+// Floating IP
+message CreateFloatingIPRequest {
+    string floating_network_id = 1;
+    string tenant_id = 2;
+}
+
+message CreateFloatingIPResponse {
+    FloatingIP floating_ip = 1;
+}
+
+message AssociateFloatingIPRequest {
+    string floating_ip_id = 1;
+    string port_id = 2;
+    string fixed_ip = 3;
+}
+
+message AssociateFloatingIPResponse {
+    FloatingIP floating_ip = 1;
+}
+
+message DisassociateFloatingIPRequest {
+    string floating_ip_id = 1;
+}
+
+message DisassociateFloatingIPResponse {
+    FloatingIP floating_ip = 1;
+}
+
+message DeleteFloatingIPRequest {
+    string floating_ip_id = 1;
+}
+
+message DeleteFloatingIPResponse {}
+
+message ListFloatingIPsRequest {
+    string tenant_id = 1;
+    string port_id = 2;
+}
+
+message ListFloatingIPsResponse {
+    repeated FloatingIP floating_ips = 1;
+}
+
+// VTEP Discovery
+message ListVTEPsRequest {}
+
+message ListVTEPsResponse {
+    repeated VTEP vteps = 1;
+}
+
+// ============================================================================
+// Network Service
+// ============================================================================
+
+service NetworkService {
+    // Network management
+    rpc CreateNetwork(CreateNetworkRequest) returns (CreateNetworkResponse);
+    rpc GetNetwork(GetNetworkRequest) returns (GetNetworkResponse);
+    rpc ListNetworks(ListNetworksRequest) returns (ListNetworksResponse);
+    rpc DeleteNetwork(DeleteNetworkRequest) returns (DeleteNetworkResponse);
+
+    // Subnet management
+    rpc CreateSubnet(CreateSubnetRequest) returns (CreateSubnetResponse);
+    rpc GetSubnet(GetSubnetRequest) returns (GetSubnetResponse);
+    rpc ListSubnets(ListSubnetsRequest) returns (ListSubnetsResponse);
+    rpc DeleteSubnet(DeleteSubnetRequest) returns (DeleteSubnetResponse);
+
+    // IP allocation
+    rpc AllocateIP(AllocateIPRequest) returns (AllocateIPResponse);
+    rpc ReleaseIP(ReleaseIPRequest) returns (ReleaseIPResponse);
+    rpc ListAllocations(ListAllocationsRequest) returns (ListAllocationsResponse);
+
+    // Port management
+    rpc CreatePort(CreatePortRequest) returns (CreatePortResponse);
+    rpc GetPort(GetPortRequest) returns (GetPortResponse);
+    rpc ListPorts(ListPortsRequest) returns (ListPortsResponse);
+    rpc DeletePort(DeletePortRequest) returns (DeletePortResponse);
+    rpc BindPort(BindPortRequest) returns (BindPortResponse);
+    rpc UnbindPort(UnbindPortRequest) returns (UnbindPortResponse);
+
+    // Security groups
+    rpc CreateSecurityGroup(CreateSecurityGroupRequest) returns (CreateSecurityGroupResponse);
+    rpc GetSecurityGroup(GetSecurityGroupRequest) returns (GetSecurityGroupResponse);
+    rpc ListSecurityGroups(ListSecurityGroupsRequest) returns (ListSecurityGroupsResponse);
+    rpc DeleteSecurityGroup(DeleteSecurityGroupRequest) returns (DeleteSecurityGroupResponse);
+    rpc AddSecurityRule(AddSecurityRuleRequest) returns (AddSecurityRuleResponse);
+    rpc RemoveSecurityRule(RemoveSecurityRuleRequest) returns (RemoveSecurityRuleResponse);
+
+    // Router management
+    rpc CreateRouter(CreateRouterRequest) returns (CreateRouterResponse);
+    rpc GetRouter(GetRouterRequest) returns (GetRouterResponse);
+    rpc ListRouters(ListRoutersRequest) returns (ListRoutersResponse);
+    rpc DeleteRouter(DeleteRouterRequest) returns (DeleteRouterResponse);
+    rpc AddRouterInterface(AddRouterInterfaceRequest) returns (AddRouterInterfaceResponse);
+    rpc RemoveRouterInterface(RemoveRouterInterfaceRequest) returns (RemoveRouterInterfaceResponse);
+    rpc AddRoute(AddRouteRequest) returns (AddRouteResponse);
+    rpc RemoveRoute(RemoveRouteRequest) returns (RemoveRouteResponse);
+
+    // Floating IP
+    rpc CreateFloatingIP(CreateFloatingIPRequest) returns (CreateFloatingIPResponse);
+    rpc AssociateFloatingIP(AssociateFloatingIPRequest) returns (AssociateFloatingIPResponse);
+    rpc DisassociateFloatingIP(DisassociateFloatingIPRequest) returns (DisassociateFloatingIPResponse);
+    rpc DeleteFloatingIP(DeleteFloatingIPRequest) returns (DeleteFloatingIPResponse);
+    rpc ListFloatingIPs(ListFloatingIPsRequest) returns (ListFloatingIPsResponse);
+
+    // VTEP discovery
+    rpc ListVTEPs(ListVTEPsRequest) returns (ListVTEPsResponse);
+}

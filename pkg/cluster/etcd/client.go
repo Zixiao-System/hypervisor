@@ -219,3 +219,109 @@ func (c *Client) Campaign(ctx context.Context, prefix, value string, leaseID cli
 
 	return nil
 }
+
+// WatchEvent represents a watch event from etcd.
+type WatchEvent struct {
+	Type  EventType
+	Key   string
+	Value string
+}
+
+// EventType represents the type of watch event.
+type EventType int
+
+const (
+	EventTypePut EventType = iota
+	EventTypeDelete
+)
+
+// KeyValue represents a key-value pair from etcd.
+type KeyValue struct {
+	Key   string
+	Value string
+}
+
+// GetWithPrefixKV retrieves all key-value pairs with a given prefix as KeyValue slice.
+func (c *Client) GetWithPrefixKV(ctx context.Context, prefix string) ([]KeyValue, error) {
+	resp, err := c.client.Get(ctx, prefix, clientv3.WithPrefix())
+	if err != nil {
+		return nil, fmt.Errorf("etcd get with prefix failed: %w", err)
+	}
+
+	result := make([]KeyValue, 0, len(resp.Kvs))
+	for _, kv := range resp.Kvs {
+		result = append(result, KeyValue{
+			Key:   string(kv.Key),
+			Value: string(kv.Value),
+		})
+	}
+
+	return result, nil
+}
+
+// PutWithTTL stores a key-value pair with a TTL.
+func (c *Client) PutWithTTL(ctx context.Context, key, value string, ttlSeconds int64) error {
+	lease, err := c.client.Grant(ctx, ttlSeconds)
+	if err != nil {
+		return fmt.Errorf("failed to create lease: %w", err)
+	}
+
+	_, err = c.client.Put(ctx, key, value, clientv3.WithLease(lease.ID))
+	if err != nil {
+		return fmt.Errorf("etcd put with ttl failed: %w", err)
+	}
+	return nil
+}
+
+// CreateIfNotExists creates a key only if it doesn't exist.
+func (c *Client) CreateIfNotExists(ctx context.Context, key, value string) (bool, error) {
+	txn := c.client.Txn(ctx)
+	txn = txn.If(clientv3.Compare(clientv3.CreateRevision(key), "=", 0))
+	txn = txn.Then(clientv3.OpPut(key, value))
+
+	resp, err := txn.Commit()
+	if err != nil {
+		return false, fmt.Errorf("create if not exists failed: %w", err)
+	}
+
+	return resp.Succeeded, nil
+}
+
+// WatchPrefixEvents watches for changes on all keys with a given prefix and returns a channel of WatchEvents.
+func (c *Client) WatchPrefixEvents(ctx context.Context, prefix string) <-chan WatchEvent {
+	eventCh := make(chan WatchEvent, 100)
+
+	go func() {
+		defer close(eventCh)
+
+		watchCh := c.client.Watch(ctx, prefix, clientv3.WithPrefix())
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case resp, ok := <-watchCh:
+				if !ok {
+					return
+				}
+				for _, ev := range resp.Events {
+					event := WatchEvent{
+						Key:   string(ev.Kv.Key),
+						Value: string(ev.Kv.Value),
+					}
+					if ev.Type == clientv3.EventTypePut {
+						event.Type = EventTypePut
+					} else {
+						event.Type = EventTypeDelete
+					}
+					select {
+					case eventCh <- event:
+					case <-ctx.Done():
+						return
+					}
+				}
+			}
+		}
+	}()
+
+	return eventCh
+}

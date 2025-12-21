@@ -60,6 +60,9 @@ type Server struct {
 	// Agent client pool
 	agentClients *AgentClientPool
 
+	// Network service
+	networkService *NetworkService
+
 	// Compute drivers (for managing instances across the cluster)
 	drivers map[driver.InstanceType]driver.Driver
 
@@ -96,6 +99,12 @@ func New(config Config, logger *zap.Logger) (*Server, error) {
 		}
 	}, logger.Named("monitor"))
 
+	// Create network service
+	networkService, err := NewNetworkService(etcdClient, logger.Named("network"))
+	if err != nil {
+		logger.Warn("failed to create network service (networking features will be unavailable)", zap.Error(err))
+	}
+
 	s := &Server{
 		config:           config,
 		logger:           logger,
@@ -104,6 +113,7 @@ func New(config Config, logger *zap.Logger) (*Server, error) {
 		instanceRegistry: instanceReg,
 		agentClients:     agentClients,
 		monitor:          monitor,
+		networkService:   networkService,
 		drivers:          make(map[driver.InstanceType]driver.Driver),
 	}
 
@@ -133,6 +143,12 @@ func (s *Server) registerServices() {
 	computeService := NewComputeService(s.registry, s.instanceRegistry, s.agentClients, s.logger.Named("compute"))
 	computeHandler := NewComputeGRPCHandler(computeService)
 	v1.RegisterComputeServiceServer(s.grpcServer, computeHandler)
+
+	// Register NetworkService
+	if s.networkService != nil {
+		networkHandler := NewNetworkGRPCHandler(s.networkService)
+		v1.RegisterNetworkServiceServer(s.grpcServer, networkHandler)
+	}
 }
 
 // Start starts the server.
@@ -148,6 +164,13 @@ func (s *Server) Start(ctx context.Context) error {
 	// Start heartbeat monitor
 	if err := s.monitor.Start(ctx); err != nil {
 		return fmt.Errorf("failed to start heartbeat monitor: %w", err)
+	}
+
+	// Start network service
+	if s.networkService != nil {
+		if err := s.networkService.Start(); err != nil {
+			s.logger.Warn("failed to start network service", zap.Error(err))
+		}
 	}
 
 	// Start gRPC server
@@ -180,6 +203,11 @@ func (s *Server) Stop() error {
 
 	// Stop heartbeat monitor
 	s.monitor.Stop()
+
+	// Stop network service
+	if s.networkService != nil {
+		s.networkService.Stop()
+	}
 
 	// Close agent clients
 	if s.agentClients != nil {
