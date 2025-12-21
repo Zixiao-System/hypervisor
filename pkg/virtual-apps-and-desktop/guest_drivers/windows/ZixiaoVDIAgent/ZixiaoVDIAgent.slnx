@@ -4,5 +4,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="Windows-VDI-WebRTC-Agent.vcxproj" />
+  <Project Path="ZixiaoVDIAgent.vcxproj" />
 </Solution>
