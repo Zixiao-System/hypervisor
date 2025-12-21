@@ -2,6 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Current Development Focus
+
+> **Note (Issue #1):** UI/前端功能开发暂缓，等待 @HwlloChen 回归后再处理。当前开发重点：
+> - 核心功能实现
+> - API 开发与完善
+> - 驱动程序开发 (libvirt, containerd, firecracker, VirtIO)
+>
+> 请勿修改 `control_and_manage_plane/`、`electron_client/`、`html-web-access/` 等前端相关代码。
+
 ## Build Commands
 
 ```bash
