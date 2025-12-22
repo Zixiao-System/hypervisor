@@ -1,0 +1,43 @@
+# Zixiao VDI Agent - Systemd Service
+#
+# Copyright (c) 2025 Zixiao System
+# SPDX-License-Identifier: Apache-2.0
+
+[Unit]
+Description=Zixiao VDI Agent
+Documentation=https://github.com/zixiao-system/hypervisor
+After=graphical-session.target
+Wants=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/zixiao-vdi-agent
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=5
+
+# Security hardening
+NoNewPrivileges=no
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+
+# Allow access to necessary devices
+DeviceAllow=/dev/uinput rw
+DeviceAllow=/dev/virtio-ports/* rw
+DeviceAllow=/dev/dri/* rw
+
+# Environment
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/run/user/1000/gdm/Xauthority
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=zixiao-vdi-agent
+
+[Install]
+WantedBy=graphical-session.target

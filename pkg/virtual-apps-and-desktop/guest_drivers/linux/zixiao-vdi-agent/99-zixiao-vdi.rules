@@ -1,0 +1,14 @@
+# Zixiao VDI Agent - udev rules
+#
+# Copyright (c) 2025 Zixiao System
+# SPDX-License-Identifier: Apache-2.0
+#
+# Install to: /etc/udev/rules.d/99-zixiao-vdi.rules
+
+# Allow access to uinput for input injection
+KERNEL=="uinput", MODE="0660", GROUP="input", TAG+="uaccess"
+
+# VirtIO-Serial ports for SPICE
+SUBSYSTEM=="virtio-ports", KERNEL=="vport*", MODE="0660", GROUP="kvm", TAG+="uaccess"
+SUBSYSTEM=="virtio-ports", ATTR{name}=="org.zixiao.vdi.*", MODE="0660", GROUP="kvm", SYMLINK+="virtio-ports/%s{name}"
+SUBSYSTEM=="virtio-ports", ATTR{name}=="com.redhat.spice.*", MODE="0660", GROUP="kvm", SYMLINK+="virtio-ports/%s{name}"
