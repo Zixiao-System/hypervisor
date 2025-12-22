@@ -7,6 +7,7 @@
  * Main driver entry point and WDF device initialization.
  */
 
+#include <initguid.h>
 #include "public.h"
 
 #ifdef ALLOC_PRAGMA

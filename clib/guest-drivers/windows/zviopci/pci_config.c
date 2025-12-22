@@ -300,18 +300,3 @@ ZvioPciParseCapabilities(
     ZvioDbgPrint("VirtIO PCI capabilities parsed successfully");
     return STATUS_SUCCESS;
 }
-
-//
-// PCI configuration space offset definitions (if not already defined)
-//
-#ifndef PCI_DEVICE_ID_OFFSET
-#define PCI_DEVICE_ID_OFFSET            0x02
-#endif
-
-#ifndef PCI_SUBSYSTEM_ID_OFFSET
-#define PCI_SUBSYSTEM_ID_OFFSET         0x2E
-#endif
-
-#ifndef PCI_CAPABILITYLIST_OFFSET
-#define PCI_CAPABILITYLIST_OFFSET       0x34
-#endif

@@ -11,6 +11,37 @@
 
 #include <ntddk.h>
 #include <wdf.h>
+#include <wdmguid.h>
+#include <ntstrsafe.h>
+
+//
+// Suppress warning for flexible array members (C99 feature)
+// MSVC treats zero-size arrays as non-standard extension
+//
+#pragma warning(disable: 4200)
+
+//
+// PCI Configuration Space Offsets
+//
+#define PCI_DEVICE_ID_OFFSET            0x02
+#define PCI_SUBSYSTEM_ID_OFFSET         0x2E
+#define PCI_CAPABILITYLIST_OFFSET       0x34
+
+//
+// WRITE_REGISTER_ULONG64 compatibility
+// Some WDK versions don't have WRITE_REGISTER_ULONGLONG
+//
+#ifndef WRITE_REGISTER_ULONG64
+#define WRITE_REGISTER_ULONG64(Register, Value) \
+    do { \
+        WRITE_REGISTER_ULONG((PULONG)(Register), (ULONG)(Value)); \
+        WRITE_REGISTER_ULONG((PULONG)((PUCHAR)(Register) + 4), (ULONG)((Value) >> 32)); \
+    } while (0)
+#endif
+
+#ifndef WRITE_REGISTER_ULONGLONG
+#define WRITE_REGISTER_ULONGLONG WRITE_REGISTER_ULONG64
+#endif
 
 //
 // VirtIO PCI Vendor/Device IDs

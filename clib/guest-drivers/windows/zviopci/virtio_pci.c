@@ -301,7 +301,6 @@ ZvioQueueCreate(
     USHORT queueSize;
     SIZE_T descSize, availSize, usedSize, totalSize;
     WDF_COMMON_BUFFER_CONFIG bufferConfig;
-    PHYSICAL_ADDRESS highestAddr = { .QuadPart = MAXULONG64 };
 
     *Queue = NULL;
 
@@ -371,7 +370,7 @@ ZvioQueueCreate(
     //
     WDF_COMMON_BUFFER_CONFIG_INIT(&bufferConfig, PAGE_SIZE);
 
-    status = WdfCommonBufferCreate(
+    status = WdfCommonBufferCreateWithConfig(
         DeviceContext->DmaEnabler,
         totalSize,
         &bufferConfig,
