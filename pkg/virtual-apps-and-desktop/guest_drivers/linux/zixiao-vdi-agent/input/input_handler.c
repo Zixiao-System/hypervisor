@@ -166,7 +166,8 @@ static void emit_event(InputHandler *ih, int type, int code, int value) {
     ev.type = type;
     ev.code = code;
     ev.value = value;
-    write(ih->uinput_fd, &ev, sizeof(ev));
+    ssize_t ret = write(ih->uinput_fd, &ev, sizeof(ev));
+    (void)ret;  // Intentionally ignoring return value for input events
 }
 
 static void sync_event(InputHandler *ih) {

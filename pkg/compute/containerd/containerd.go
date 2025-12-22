@@ -13,6 +13,7 @@ import (
 
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/cio"
+	"github.com/containerd/containerd/containers"
 	"github.com/containerd/containerd/namespaces"
 	"github.com/containerd/containerd/oci"
 	"github.com/google/uuid"
@@ -474,6 +475,3 @@ func withCPULimit(quota, period int64) oci.SpecOpts {
 func uint64Ptr(v uint64) *uint64 {
 	return &v
 }
-
-// Ensure we need this import for oci.Spec
-type containers = containerd

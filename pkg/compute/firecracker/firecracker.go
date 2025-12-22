@@ -196,10 +196,6 @@ func (d *Driver) Create(ctx context.Context, spec *driver.InstanceSpec) (*driver
 	}
 
 	// Create the machine
-	machineOpts := []firecracker.Opt{
-		firecracker.WithLogger(newZapLogAdapter(d.logger)),
-	}
-
 	cmd := firecracker.VMCommandBuilder{}.
 		WithBin(d.config.BinaryPath).
 		WithSocketPath(socketPath).
@@ -207,14 +203,15 @@ func (d *Driver) Create(ctx context.Context, spec *driver.InstanceSpec) (*driver
 		WithStderr(logFile).
 		Build(ctx)
 
+	machineOpts := []firecracker.Opt{
+		firecracker.WithProcessRunner(cmd),
+	}
+
 	machine, err := firecracker.NewMachine(ctx, fcCfg, machineOpts...)
 	if err != nil {
 		logFile.Close()
 		return nil, fmt.Errorf("failed to create machine: %w", err)
 	}
-
-	// Set the command
-	machine.Cmd = cmd
 
 	now := time.Now()
 	vmInstance := &VMInstance{
@@ -417,29 +414,4 @@ func (d *Driver) Close() error {
 	d.instances = make(map[string]*VMInstance)
 	d.logger.Info("firecracker driver closed")
 	return nil
-}
-
-// zapLogAdapter adapts zap.Logger to Firecracker's logger interface.
-type zapLogAdapter struct {
-	logger *zap.Logger
-}
-
-func newZapLogAdapter(logger *zap.Logger) *zapLogAdapter {
-	return &zapLogAdapter{logger: logger}
-}
-
-func (z *zapLogAdapter) Debugf(format string, args ...interface{}) {
-	z.logger.Debug(fmt.Sprintf(format, args...))
-}
-
-func (z *zapLogAdapter) Infof(format string, args ...interface{}) {
-	z.logger.Info(fmt.Sprintf(format, args...))
-}
-
-func (z *zapLogAdapter) Warnf(format string, args ...interface{}) {
-	z.logger.Warn(fmt.Sprintf(format, args...))
-}
-
-func (z *zapLogAdapter) Errorf(format string, args ...interface{}) {
-	z.logger.Error(fmt.Sprintf(format, args...))
 }

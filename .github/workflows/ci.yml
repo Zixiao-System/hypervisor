@@ -109,19 +109,15 @@ jobs:
 
       - name: Build zviopci
         run: msbuild clib/guest-drivers/windows/zviopci/zviopci.vcxproj /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }}
-        continue-on-error: true
 
       - name: Build zvioblk
         run: msbuild clib/guest-drivers/windows/zvioblk/zvioblk.vcxproj /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }}
-        continue-on-error: true
 
       - name: Build zvionet
         run: msbuild clib/guest-drivers/windows/zvionet/zvionet.vcxproj /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }}
-        continue-on-error: true
 
       - name: Build zviobln
         run: msbuild clib/guest-drivers/windows/zviobln/zviobln.vcxproj /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }}
-        continue-on-error: true
 
   build:
     name: Build
