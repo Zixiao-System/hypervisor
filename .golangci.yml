@@ -20,7 +20,7 @@ linters:
     - unconvert
     - gocritic
     - revive
-    - exportloopref
+    - copyloopvar
 
 linters-settings:
   gofmt:
