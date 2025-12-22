@@ -1,0 +1,16 @@
+[Unit]
+Description=Hypervisor Agent (Compute Node)
+Documentation=https://github.com/your-org/hypervisor
+After=network.target libvirtd.service containerd.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/local/bin/hypervisor-agent --config /etc/hypervisor/agent.yaml
+Restart=always
+RestartSec=5
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

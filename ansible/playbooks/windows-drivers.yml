@@ -1,0 +1,48 @@
+---
+# =============================================================================
+# Windows VirtIO Driver Installation Playbook
+# =============================================================================
+# Usage:
+#   ansible-playbook -i inventories/dev/hosts.yml playbooks/windows-drivers.yml
+# =============================================================================
+
+- name: Install Zixiao VirtIO drivers on Windows guests
+  hosts: windows_guests
+  gather_facts: true
+
+  vars:
+    drivers_source: "{{ playbook_dir }}/../../clib/guest-drivers/windows"
+    drivers_dest: 'C:\Zixiao\Drivers'
+
+  tasks:
+    - name: Create drivers directory
+      win_file:
+        path: "{{ drivers_dest }}"
+        state: directory
+
+    - name: Copy driver package
+      win_copy:
+        src: "{{ drivers_source }}/"
+        dest: "{{ drivers_dest }}"
+      register: copy_result
+
+    - name: Install drivers
+      win_shell: |
+        Set-Location "{{ drivers_dest }}\installer"
+        .\Install-ZixiaoDrivers.ps1 -Silent
+      args:
+        executable: powershell.exe
+      when: copy_result.changed
+
+    - name: Verify driver installation
+      win_shell: |
+        Get-WmiObject Win32_PnPSignedDriver |
+        Where-Object { $_.DeviceName -like "*Zixiao*" } |
+        Select-Object DeviceName, DriverVersion, IsSigned |
+        ConvertTo-Json
+      register: driver_status
+
+    - name: Display installed drivers
+      debug:
+        msg: "{{ driver_status.stdout | from_json }}"
+      when: driver_status.stdout | length > 0

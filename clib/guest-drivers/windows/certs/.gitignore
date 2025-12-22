@@ -1,0 +1,10 @@
+# Private key files - NEVER commit
+*.pfx
+*.p12
+*.key
+
+# Keep thumbprint for CI reference
+!thumbprint.txt
+
+# Keep public certificate for distribution
+!*.cer

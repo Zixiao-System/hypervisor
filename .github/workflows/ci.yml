@@ -104,7 +104,7 @@ jobs:
           path: pkg/virtual-apps-and-desktop/guest_drivers/linux/zixiao-vdi-agent/bin/
 
   build-windows-drivers:
-    name: Build Windows VirtIO Drivers (${{ matrix.platform }}, ${{ matrix.configuration }})
+    name: Build and Sign Windows VirtIO Drivers (${{ matrix.platform }}, ${{ matrix.configuration }})
     runs-on: windows-latest
     # Mark as optional - WDK installation is complex and may fail
     continue-on-error: true
@@ -137,6 +137,84 @@ jobs:
 
       - name: Build zviobln
         run: msbuild clib/guest-drivers/windows/zviobln/zviobln.vcxproj /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }}
+
+      - name: Generate CI signing certificate
+        shell: pwsh
+        run: |
+          # Generate a short-lived self-signed certificate for CI builds
+          $cert = New-SelfSignedCertificate `
+            -Subject "CN=Zixiao CI Driver Signing, O=Zixiao System, C=CN" `
+            -Type CodeSigningCert `
+            -KeySpec Signature `
+            -KeyExportPolicy Exportable `
+            -KeyLength 4096 `
+            -HashAlgorithm SHA256 `
+            -NotAfter (Get-Date).AddDays(1) `
+            -CertStoreLocation "Cert:\CurrentUser\My" `
+            -TextExtension @("2.5.29.37={text}1.3.6.1.5.5.7.3.3,1.3.6.1.4.1.311.10.3.6")
+
+          # Save thumbprint for signing step
+          echo "CERT_THUMBPRINT=$($cert.Thumbprint)" >> $env:GITHUB_ENV
+
+          # Export public certificate for distribution
+          $certsDir = "clib/guest-drivers/windows/certs"
+          New-Item -ItemType Directory -Force -Path $certsDir | Out-Null
+          Export-Certificate -Cert $cert -FilePath "$certsDir/zixiao-driver-signing.cer" -Type CERT
+          $cert.Thumbprint | Out-File -FilePath "$certsDir/thumbprint.txt" -Encoding ASCII -NoNewline
+
+          Write-Host "Certificate generated with thumbprint: $($cert.Thumbprint)"
+
+      - name: Sign drivers
+        shell: pwsh
+        run: |
+          cd clib/guest-drivers/windows/signing
+          .\sign-drivers.ps1 -CertThumbprint $env:CERT_THUMBPRINT -Platform ${{ matrix.platform }} -Configuration ${{ matrix.configuration }}
+
+      - name: Create driver package
+        shell: pwsh
+        run: |
+          $platform = "${{ matrix.platform }}"
+          $config = "${{ matrix.configuration }}"
+          $version = if ($env:GITHUB_REF -match 'refs/tags/v(.+)') { $matches[1] } else { "0.0.0-dev" }
+          $packageName = "zixiao-virtio-drivers-$version-$platform"
+          $packageDir = "dist/$packageName"
+
+          # Create package directory structure
+          New-Item -ItemType Directory -Force -Path $packageDir | Out-Null
+          New-Item -ItemType Directory -Force -Path "$packageDir/certs" | Out-Null
+          New-Item -ItemType Directory -Force -Path "$packageDir/installer" | Out-Null
+
+          # Copy drivers
+          $drivers = @("zviopci", "zvioblk", "zvionet", "zviobln")
+          foreach ($driver in $drivers) {
+            $srcDir = "clib/guest-drivers/windows/$driver/$platform/$config"
+            $dstDir = "$packageDir/$driver"
+            if (Test-Path $srcDir) {
+              New-Item -ItemType Directory -Force -Path $dstDir | Out-Null
+              Copy-Item "$srcDir/*" $dstDir -Recurse -Force
+            }
+            # Copy INF file
+            $infSrc = "clib/guest-drivers/windows/$driver/$driver.inf"
+            if (Test-Path $infSrc) {
+              Copy-Item $infSrc $dstDir -Force
+            }
+          }
+
+          # Copy certificate and installer
+          Copy-Item "clib/guest-drivers/windows/certs/*" "$packageDir/certs" -Force
+          Copy-Item "clib/guest-drivers/windows/installer/*" "$packageDir/installer" -Force
+          Copy-Item "clib/guest-drivers/windows/README.md" $packageDir -Force
+
+          # Create ZIP archive
+          Compress-Archive -Path $packageDir -DestinationPath "dist/$packageName.zip" -Force
+          Write-Host "Created package: dist/$packageName.zip"
+
+      - name: Upload driver package
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-drivers-${{ matrix.platform }}
+          path: |
+            dist/*.zip
 
   build:
     name: Build

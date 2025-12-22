@@ -1,0 +1,12 @@
+name: {{ etcd_name | default(inventory_hostname) }}
+data-dir: /var/lib/etcd
+listen-client-urls: http://0.0.0.0:2379
+advertise-client-urls: http://{{ ansible_host }}:2379
+listen-peer-urls: http://0.0.0.0:2380
+initial-advertise-peer-urls: http://{{ ansible_host }}:2380
+initial-cluster: {{ groups['etcd'] | map('extract', hostvars) | map(attribute='etcd_name', default='') | zip(groups['etcd'] | map('extract', hostvars) | map(attribute='ansible_host')) | map('join', '=http://') | map('regex_replace', '$', ':2380') | join(',') }}
+initial-cluster-state: new
+initial-cluster-token: {{ project_name }}-{{ environment }}
+enable-v2: false
+auto-compaction-mode: periodic
+auto-compaction-retention: "1"

@@ -1,0 +1,88 @@
+#!/bin/bash
+# =============================================================================
+# etcd Node Initialization Script
+# =============================================================================
+
+set -e
+
+# Configuration
+ETCD_VERSION="${etcd_version}"
+CLUSTER_NAME="${cluster_name}"
+NODE_NAME="${node_name}"
+NODE_INDEX="${node_index}"
+INITIAL_CLUSTER="${initial_cluster}"
+
+# Get instance metadata
+TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+PRIVATE_IP=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/local-ipv4)
+
+echo "=== Installing etcd $ETCD_VERSION ==="
+
+# Install etcd
+ETCD_RELEASE="etcd-$ETCD_VERSION-linux-amd64"
+curl -sL "https://github.com/etcd-io/etcd/releases/download/$ETCD_VERSION/$ETCD_RELEASE.tar.gz" -o /tmp/etcd.tar.gz
+tar xzf /tmp/etcd.tar.gz -C /tmp
+mv /tmp/$ETCD_RELEASE/etcd /usr/local/bin/
+mv /tmp/$ETCD_RELEASE/etcdctl /usr/local/bin/
+rm -rf /tmp/etcd.tar.gz /tmp/$ETCD_RELEASE
+
+# Create etcd user and directories
+useradd -r -s /usr/sbin/nologin etcd || true
+mkdir -p /var/lib/etcd /etc/etcd
+chown -R etcd:etcd /var/lib/etcd
+
+echo "=== Configuring etcd ==="
+
+# Create etcd configuration
+cat > /etc/etcd/etcd.conf.yml <<EOF
+name: $NODE_NAME
+data-dir: /var/lib/etcd
+listen-client-urls: http://0.0.0.0:2379
+advertise-client-urls: http://$PRIVATE_IP:2379
+listen-peer-urls: http://0.0.0.0:2380
+initial-advertise-peer-urls: http://$PRIVATE_IP:2380
+initial-cluster: $INITIAL_CLUSTER
+initial-cluster-state: new
+initial-cluster-token: $CLUSTER_NAME
+enable-v2: false
+auto-compaction-mode: periodic
+auto-compaction-retention: "1"
+EOF
+
+# Create systemd service
+cat > /etc/systemd/system/etcd.service <<EOF
+[Unit]
+Description=etcd distributed key-value store
+Documentation=https://github.com/etcd-io/etcd
+After=network.target
+
+[Service]
+Type=notify
+User=etcd
+ExecStart=/usr/local/bin/etcd --config-file /etc/etcd/etcd.conf.yml
+Restart=always
+RestartSec=10s
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+echo "=== Starting etcd ==="
+
+# Enable and start etcd
+systemctl daemon-reload
+systemctl enable etcd
+systemctl start etcd
+
+# Wait for etcd to be ready
+for i in {1..30}; do
+    if etcdctl --endpoints=http://localhost:2379 endpoint health 2>/dev/null; then
+        echo "etcd is healthy!"
+        break
+    fi
+    echo "Waiting for etcd to be ready... ($i/30)"
+    sleep 2
+done
+
+echo "=== etcd installation complete ==="

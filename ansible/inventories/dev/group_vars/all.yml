@@ -1,0 +1,53 @@
+---
+# =============================================================================
+# Global Variables
+# =============================================================================
+
+# Project
+hypervisor_version: "latest"
+project_name: hypervisor
+environment: dev
+
+# Network
+hypervisor_domain: hypervisor.local
+
+# etcd
+etcd_version: "v3.5.9"
+etcd_endpoints: "{{ groups['etcd'] | map('extract', hostvars, 'ansible_host') | map('regex_replace', '$', ':2379') | join(',') }}"
+
+# Server
+server_grpc_port: 50051
+server_http_port: 8080
+
+# Agent
+agent_grpc_port: 50052
+agent_region: "{{ environment }}"
+agent_zone: "{{ agent_zone | default('default') }}"
+
+# Instance types
+supported_instance_types:
+  - vm
+  - container
+  - microvm
+
+# Logging
+log_level: info
+
+# TLS
+tls_enabled: false
+
+# System packages
+common_packages:
+  - curl
+  - wget
+  - jq
+  - htop
+  - net-tools
+  - vim
+  - unzip
+
+# Firewall
+firewall_enabled: true
+
+# Binary download base URL
+hypervisor_download_url: "https://github.com/your-org/hypervisor/releases"

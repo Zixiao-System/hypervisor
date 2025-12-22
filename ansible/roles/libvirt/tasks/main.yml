@@ -1,0 +1,36 @@
+---
+# =============================================================================
+# libvirt Role
+# =============================================================================
+
+- name: Install libvirt packages
+  apt:
+    name:
+      - qemu-kvm
+      - libvirt-daemon-system
+      - libvirt-clients
+      - bridge-utils
+      - virtinst
+    state: present
+
+- name: Enable libvirtd
+  systemd:
+    name: libvirtd
+    enabled: true
+    state: started
+
+- name: Add hypervisor user to libvirt groups
+  user:
+    name: hypervisor
+    groups:
+      - libvirt
+      - kvm
+    append: true
+
+- name: Create images directory
+  file:
+    path: /var/lib/hypervisor/images
+    state: directory
+    owner: hypervisor
+    group: libvirt
+    mode: '0775'

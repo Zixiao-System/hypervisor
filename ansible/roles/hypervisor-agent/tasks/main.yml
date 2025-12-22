@@ -1,0 +1,45 @@
+---
+# =============================================================================
+# Hypervisor Agent Role
+# =============================================================================
+
+- name: Install libvirt (for VMs)
+  include_role:
+    name: libvirt
+  when: "'vm' in supported_instance_types"
+
+- name: Install containerd (for containers)
+  include_role:
+    name: containerd
+  when: "'container' in supported_instance_types"
+
+- name: Download hypervisor-agent binary
+  get_url:
+    url: "{{ hypervisor_download_url }}/{{ 'latest/download' if hypervisor_version == 'latest' else 'download/' + hypervisor_version }}/hypervisor-agent-linux-{{ ansible_architecture | replace('x86_64', 'amd64') | replace('aarch64', 'arm64') }}"
+    dest: /usr/local/bin/hypervisor-agent
+    mode: '0755'
+  notify: restart hypervisor-agent
+
+- name: Create agent configuration
+  template:
+    src: agent.yaml.j2
+    dest: /etc/hypervisor/agent.yaml
+    owner: hypervisor
+    group: hypervisor
+    mode: '0640'
+  notify: restart hypervisor-agent
+
+- name: Create systemd service
+  template:
+    src: hypervisor-agent.service.j2
+    dest: /etc/systemd/system/hypervisor-agent.service
+    mode: '0644'
+  notify:
+    - reload systemd
+    - restart hypervisor-agent
+
+- name: Enable and start hypervisor-agent
+  systemd:
+    name: hypervisor-agent
+    enabled: true
+    state: started

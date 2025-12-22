@@ -1,118 +1,188 @@
-## 紫霄Windows VirtIO驱动
+# 紫霄 Windows VirtIO 驱动
 
-⚠️ **警告**：需要使用Visual Studio 2022 + WDK编译
+Windows 平台的 VirtIO 半虚拟化驱动程序，用于 Zixiao Hypervisor 管理的虚拟机。
 
-## 编译
+## 驱动列表
 
-### 1. 安装依赖
+| 驱动 | 说明 | 设备类型 |
+|------|------|----------|
+| zviopci | VirtIO PCI 总线驱动 | 系统设备 |
+| zvioblk | VirtIO 块存储驱动 | 磁盘驱动器 |
+| zvionet | VirtIO 网络驱动 | 网络适配器 |
+| zviobln | VirtIO 内存气球驱动 | 系统设备 |
 
-**步骤 1：安装 Visual Studio 2022**
+## 快速开始
 
-WDK 需要 Visual Studio。有关 Visual Studio 系统要求的详细信息，请参阅 [Visual Studio 2022 系统要求](https://docs.microsoft.com/visualstudio/releases/2022/system-requirements)。
+### 方式一：使用安装程序（推荐）
 
-> **重要**：目前不要将 Visual Studio 2026 用于 Windows 驱动程序开发。WDK 尚未使用 Visual Studio 2026 进行验证，并且不保证兼容性。继续使用 Visual Studio 2022 进行所有驱动程序开发。当 WDK 正式支持 Visual Studio 2026 时，我们将更新此页面。
+1. 从 [GitHub Releases](https://github.com/your-org/hypervisor/releases) 下载最新驱动包
+2. 解压后，以**管理员身份**双击运行 `installer\install.cmd`
+3. 安装程序将自动：
+   - 安装驱动签名证书到受信任发布者
+   - 安装所有 VirtIO 驱动程序
 
-Visual Studio 2022 Community、Professional 或 Enterprise 版本支持此版本的驱动程序开发。
-
-[下载 Visual Studio 2022](https://visualstudio.microsoft.com/vs/)
-
-安装 Visual Studio 2022 时，请选择 **具有C++工作负荷的桌面开发**。然后，在"单个组件"下添加：
-
-- MSVC v143 - VS 2022 C++ ARM64/ARM64EC Spectre 缓解库（最新版本）
-- MSVC v143 - VS 2022 C++ x64/x86 Spectre 缓解库（最新版本）
-- 带有 Spectre 缓解库的适用于最新 v143 生成工具的 C++ ATL (ARM64/ARM64EC)
-- 带有 Spectre 缓解库的适用于最新 v143 生成工具的 C++ ATL (x86 & x64)
-- 带有 Spectre 缓解库的适用于最新 v143 生成工具的 C++ MFC (ARM64/ARM64EC)
-- 适用于最新 v143 生成工具且带有 Spectre 漏洞缓解措施的 C++ MFC (x86 & x64)
-- Windows 驱动程序工具包 (WDK)
-
-> **提示**：使用搜索框查找"64 latest spectre"（在英文安装中）或"64 最新"（在非英文安装中）以快速查看这些组件。
-
-**步骤 2：安装 SDK**
-
-安装 Visual Studio 不会下载最新的 SDK 版本。使用以下链接安装最新的 SDK 版本：
-
-[下载最新的 Windows SDK](https://developer.microsoft.com/windows/downloads/windows-sdk/)
-
-所提供的 SDK 和 WDK 链接具有匹配的版本号，这对套件的协同工作始终必不可少。如果您决定安装您自己的SDK/WDK对，可能是针对不同的Windows版本，请确保版本号匹配。有关详细信息，请参阅 [工具包版本控制](https://docs.microsoft.com/windows-hardware/drivers/other-useful-resources/kit-version-numbers)。
-
-**步骤 3：安装 WDK**
-
-[下载最新的 WDK](https://docs.microsoft.com/windows-hardware/drivers/download-the-wdk)
-
-从版本 17.11.0 开始，WDK VSIX 作为单个组件包含在 Visual Studio 中。安装 WDK 之前，安装程序会检查是否已安装兼容版本的 VSIX。如果安装程序找不到 WDK VSIX，它会提示你安装它。若要安装 WDK VSIX，请启动 Visual Studio 安装程序，选择"修改"，转到"单个组件"选项卡，添加 Windows 驱动程序工具包，然后选择"修改"。
-
-### 2. 编译驱动程序
-
-1. 打开 Visual Studio 2022
-2. 选择 **文件** > **打开** > **项目/解决方案**
-3. 导航到驱动程序项目文件夹，选择 `.sln` 解决方案文件
-4. 在"解决方案资源管理器"中，右键点击项目，选择 **属性**
-5. 配置以下设置：
-   - **平台工具集**：选择 v143（VS 2022）
-   - **Windows SDK 版本**：选择安装的最新版本
-   - **配置**：选择 Release 或 Debug
-6. 右键点击项目，选择 **生成** 或按 `Ctrl+B` 编译
-7. 编译成功后，驱动程序文件（`.sys`）将生成在输出目录中
-
-### 3. 部署到VM（暂无EV代码签名）
-
-在部署驱动程序到虚拟机之前，请确保已正确安装并配置了驱动程序。由于当前没有EV代码签名，您需要在虚拟机中启用测试模式来加载驱动程序。
-
-本驱动仅支持Windows测试模式，正式使用需自行承担安全风险；若需在生产环境使用，请自行购买EV代码签名证书或通过WHQL认证。
-
-## 部署步骤
-
-### 第一步：在虚拟机中启用测试模式
-
-1. 在虚拟机中以管理员身份打开命令提示符（cmd.exe）或 PowerShell
-2. 执行以下命令启用测试模式：
-   ```cmd
-   bcdedit.exe /set nointegritychecks on
-   bcdedit.exe /set testsigning on
-   ```
-3. 重启虚拟机使设置生效
-
-### 第二步：准备驱动程序文件
-
-1. 复制编译生成的驱动程序文件（`.sys`）到虚拟机
-2. 创建驱动程序目录结构：
-   - 驱动程序二进制文件（`.sys`）
-   - 驱动程序信息文件（`.inf`）
-   - 目录文件（`.cat`）
-
-### 第三步：安装驱动程序
-
-**方法一：使用 DevCon 工具**
-
-1. 下载 [Windows Driver Kit 工具](https://docs.microsoft.com/windows-hardware/drivers/download-the-wdk)
-2. 在虚拟机中以管理员身份运行：
-   ```cmd
-   devcon install driver.inf PCI\VEN_xxxx&DEV_xxxx
-   ```
-
-**方法二：使用设备管理器手动安装**
-
-1. 右键点击设备，选择 **更新驱动程序**
-2. 选择 **浏览我的计算机以查找驱动程序**
-3. 选择驱动程序文件所在的目录
-4. 完成安装
-
-### 第四步：验证驱动程序
-
-1. 打开设备管理器，查找对应的设备
-2. 检查驱动程序是否已正确加载
-3. 查看事件查看器中是否有驱动程序相关的错误或警告
-
-### 禁用测试模式（可选）
-
-部署完成后，如需恢复正常模式，执行以下命令：
-
-```cmd
-bcdedit.exe /set nointegritychecks off
-bcdedit.exe /set testsigning off
+```powershell
+# 或者使用 PowerShell
+.\installer\Install-ZixiaoDrivers.ps1
 ```
 
-然后重启虚拟机。
+### 方式二：手动安装证书和驱动
 
-### 安全警告：由于无代码签名，在GitHub Release下载的任何内核模式驱动请务必验证Checksum，以免导致系统损坏或者安全问题
+```powershell
+# 1. 导入证书
+certutil -addstore "TrustedPublisher" certs\zixiao-driver-signing.cer
+certutil -addstore "Root" certs\zixiao-driver-signing.cer
+
+# 2. 安装驱动
+pnputil /add-driver zviopci\zviopci.inf /install
+pnputil /add-driver zvioblk\zvioblk.inf /install
+pnputil /add-driver zvionet\zvionet.inf /install
+pnputil /add-driver zviobln\zviobln.inf /install
+```
+
+### 验证安装
+
+```powershell
+# 查看已安装的紫霄驱动
+Get-WmiObject Win32_PnPSignedDriver | Where-Object { $_.DeviceName -like "*Zixiao*" }
+```
+
+## 生产环境部署
+
+### 证书注入方式
+
+本驱动使用自签名证书，适用于以下场景：
+
+1. **Hypervisor 预装镜像**：在创建 Windows VM 镜像时预先注入证书
+2. **企业内部 CA**：使用企业 PKI 基础设施签发的证书
+3. **Ansible/Terraform 自动化**：通过配置管理工具自动安装
+
+### 生产环境建议
+
+对于生产环境，建议采用以下方式之一：
+
+| 方式 | 适用场景 | 说明 |
+|------|----------|------|
+| WHQL 认证 | 公开发布 | 获取微软 WHQL 认证，无需安装证书 |
+| EV 代码签名 | 商业部署 | 购买 EV 代码签名证书 |
+| 企业 CA | 企业内部 | 使用企业 PKI 签发证书 |
+| 自签名 + 预装 | 私有云 | 在 VM 镜像中预装证书（当前方式） |
+
+## 开发者指南
+
+### 编译环境
+
+- Visual Studio 2022
+- Windows SDK (最新版本)
+- Windows Driver Kit (WDK)
+
+详细安装步骤参见 [WDK 安装指南](https://docs.microsoft.com/windows-hardware/drivers/download-the-wdk)
+
+### 编译驱动
+
+```powershell
+# 使用 Visual Studio
+msbuild zviopci\zviopci.vcxproj /p:Configuration=Release /p:Platform=x64
+
+# 编译所有驱动
+$drivers = @("zviopci", "zvioblk", "zvionet", "zviobln")
+foreach ($d in $drivers) {
+    msbuild "$d\$d.vcxproj" /p:Configuration=Release /p:Platform=x64
+}
+```
+
+### 生成签名证书
+
+```powershell
+cd signing
+.\generate-cert.ps1
+```
+
+生成的文件：
+- `certs\zixiao-driver-signing.pfx` - 私钥（勿提交到 Git）
+- `certs\zixiao-driver-signing.cer` - 公钥证书（随驱动分发）
+- `certs\thumbprint.txt` - 证书指纹（用于 CI/CD）
+
+### 签名驱动
+
+```powershell
+cd signing
+
+# 使用 PFX 文件签名
+.\sign-drivers.ps1 -PfxPath ..\certs\zixiao-driver-signing.pfx
+
+# 或使用证书指纹签名（证书已安装到证书存储）
+.\sign-drivers.ps1 -CertThumbprint "ABCD1234..."
+
+# 指定平台
+.\sign-drivers.ps1 -PfxPath ..\certs\zixiao-driver-signing.pfx -Platform ARM64
+```
+
+### 创建发布包
+
+```powershell
+# 打包所有驱动和安装程序
+.\installer\Create-DriverPackage.ps1 -Version "1.0.0"
+```
+
+## 目录结构
+
+```
+clib/guest-drivers/windows/
+├── signing/                    # 签名工具
+│   ├── generate-cert.ps1       # 生成自签名证书
+│   └── sign-drivers.ps1        # 签名驱动
+├── installer/                  # 安装程序
+│   ├── Install-ZixiaoDrivers.ps1   # 安装脚本
+│   ├── Uninstall-ZixiaoDrivers.ps1 # 卸载脚本
+│   └── install.cmd             # 快速安装入口
+├── certs/                      # 证书目录
+│   └── .gitignore              # 排除私钥文件
+├── zviopci/                    # PCI 总线驱动
+├── zvioblk/                    # 块存储驱动
+├── zvionet/                    # 网络驱动
+├── zviobln/                    # 内存气球驱动
+└── README.md                   # 本文档
+```
+
+## 卸载驱动
+
+```powershell
+# 使用卸载脚本
+.\installer\Uninstall-ZixiaoDrivers.ps1
+
+# 同时移除证书
+.\installer\Uninstall-ZixiaoDrivers.ps1 -RemoveCertificate
+```
+
+## 故障排除
+
+### 驱动未加载
+
+1. 确认证书已正确安装：
+   ```powershell
+   Get-ChildItem Cert:\LocalMachine\TrustedPublisher | Where-Object { $_.Subject -like "*Zixiao*" }
+   ```
+
+2. 检查设备管理器中是否有未识别的 VirtIO 设备
+
+3. 查看系统事件日志中的驱动相关错误
+
+### 签名验证失败
+
+确保：
+- 证书已添加到 `TrustedPublisher` 和 `Root` 存储
+- 驱动文件未被修改（校验 SHA256）
+- 系统时间正确（证书有效期检查）
+
+## 安全注意事项
+
+- **私钥保护**：`*.pfx` 文件包含私钥，切勿提交到版本控制
+- **校验完整性**：从 GitHub Release 下载驱动时，请验证 SHA256 校验和
+- **信任链**：自签名证书仅适用于受控环境，公开发布建议使用 WHQL 认证
+
+## 许可证
+
+Apache License 2.0
+
+Copyright (c) 2025 Zixiao System

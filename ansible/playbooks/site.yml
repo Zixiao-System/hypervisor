@@ -1,0 +1,62 @@
+---
+# =============================================================================
+# Site Playbook - Complete Deployment
+# =============================================================================
+# Usage:
+#   ansible-playbook -i inventories/dev/hosts.yml playbooks/site.yml
+#
+# Tags:
+#   - common: Common setup
+#   - etcd: etcd cluster deployment
+#   - server: hypervisor-server deployment
+#   - agent: hypervisor-agent deployment
+# =============================================================================
+
+- name: Common setup for all nodes
+  hosts: all
+  become: true
+  tags: [common]
+  roles:
+    - common
+
+- name: Deploy etcd cluster
+  hosts: etcd
+  become: true
+  tags: [etcd]
+  roles:
+    - etcd
+
+- name: Deploy hypervisor-server (control plane)
+  hosts: servers
+  become: true
+  tags: [server]
+  roles:
+    - hypervisor-server
+
+- name: Deploy hypervisor-agent (compute nodes)
+  hosts: agents
+  become: true
+  tags: [agent]
+  roles:
+    - hypervisor-agent
+
+- name: Verify cluster health
+  hosts: servers[0]
+  tags: [verify]
+  tasks:
+    - name: Wait for server to be ready
+      wait_for:
+        port: "{{ server_grpc_port }}"
+        delay: 5
+        timeout: 60
+
+    - name: Check cluster status
+      command: /usr/local/bin/hypervisor-ctl cluster info
+      register: cluster_info
+      changed_when: false
+      ignore_errors: true
+
+    - name: Display cluster status
+      debug:
+        var: cluster_info.stdout_lines
+      when: cluster_info.rc == 0
