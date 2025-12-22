@@ -158,6 +158,13 @@ Used via CGO for performance-critical paths:
 
 Guest-side agents for Virtual Desktop Infrastructure:
 - `windows/webrtc/Windows-VDI-WebRTC-Agent/` - Windows WebRTC streaming agent for VDI (Visual Studio 2026 C++ project)
+- `linux/zixiao-vdi-agent/` - Linux VDI Agent with:
+  - Audio capture (PulseAudio)
+  - Display capture (X11/XRandR)
+  - Clipboard management (X11 selections)
+  - Input handling (uinput virtual devices)
+  - SPICE agent protocol
+  - WebRTC streaming
 
 ## Code Style
 

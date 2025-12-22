@@ -183,7 +183,9 @@ hypervisor/
 │   └── virtual-apps-and-desktop/
 │       ├── electron_client/      # VDI desktop client (Electron + Vue)
 │       ├── html-web-access/      # Browser-based desktop access
-│       └── guest_drivers/        # VDI guest agents (WebRTC streaming)
+│       └── guest_drivers/        # VDI guest agents
+│           ├── linux/            # Linux VDI Agent (audio, display, clipboard, input, SPICE, WebRTC)
+│           └── windows/          # Windows WebRTC streaming agent
 ├── control_and_manage_plane/
 │   └── src/                      # Management Web UI (Vue 3 + MDUI)
 │       ├── src/
@@ -384,17 +386,22 @@ import '@mdui/icons/memory.js'
 - [x] Floating IP and NAT support
 - [x] NetworkService gRPC API
 
-### Phase 4: Guest Drivers (Planned)
+### Phase 4: Guest Drivers (In Progress)
 - [x] VirtIO ring library (virtio_ring.c)
 - [x] Memory balloon driver
-- [ ] **VDI Guest Agent** (Linux)
-  - Display resize and multi-monitor support
-  - Clipboard sharing (text/image/file)
-  - Audio redirection
-  - USB device redirection
-  - Seamless window mode
-- [ ] **Windows Guest Drivers** (Priority: High)
-  - Windows VirtIO drivers (storage, network, balloon)
+- [x] **Linux VDI Guest Agent** (zixiao-vdi-agent)
+  - Audio capture (PulseAudio)
+  - Display capture (X11/XRandR)
+  - Clipboard sharing (X11 selections)
+  - Input handling (uinput virtual devices)
+  - SPICE agent integration
+  - WebRTC streaming
+- [x] **Windows VirtIO Drivers** (KMDF)
+  - zviopci - PCI bus driver
+  - zvioblk - Block storage driver
+  - zvionet - Network driver
+  - zviobln - Memory balloon driver
+- [ ] **Windows Guest Agent**
   - SPICE guest agent for Windows
   - QXL/VirtIO-GPU display driver
   - QEMU Guest Agent (qga) for Windows
