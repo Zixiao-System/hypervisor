@@ -89,9 +89,9 @@ type NetworkSpec struct {
 	MTU         uint16      `json:"mtu,omitempty"`          // Network MTU
 
 	// Port binding configuration
-	PortID       string          `json:"port_id,omitempty"`       // Pre-created port ID
-	BindingType  PortBindingType `json:"binding_type,omitempty"`  // ovs, vhost-user, sriov
-	DeviceName   string          `json:"device_name,omitempty"`   // tap0, veth0, etc.
+	PortID      string          `json:"port_id,omitempty"`      // Pre-created port ID
+	BindingType PortBindingType `json:"binding_type,omitempty"` // ovs, vhost-user, sriov
+	DeviceName  string          `json:"device_name,omitempty"`  // tap0, veth0, etc.
 }
 
 // OverlayType represents the type of network overlay.
@@ -108,10 +108,10 @@ const (
 type PortBindingType string
 
 const (
-	PortBindingOVS        PortBindingType = "ovs"
+	PortBindingOVS         PortBindingType = "ovs"
 	PortBindingLinuxBridge PortBindingType = "linuxbridge"
-	PortBindingVhostUser  PortBindingType = "vhost-user"
-	PortBindingSRIOV      PortBindingType = "sriov"
+	PortBindingVhostUser   PortBindingType = "vhost-user"
+	PortBindingSRIOV       PortBindingType = "sriov"
 )
 
 // DiskSpec defines disk configuration.

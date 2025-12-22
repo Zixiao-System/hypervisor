@@ -15,24 +15,24 @@ import (
 )
 
 const (
-	vtepKeyPrefix  = "/hypervisor/network/vteps/"
-	vtepTTL        = 60 // seconds
+	vtepKeyPrefix       = "/hypervisor/network/vteps/"
+	vtepTTL             = 60 // seconds
 	vtepRefreshInterval = 30 * time.Second
 )
 
 // VTEPManager manages VTEP registration and discovery across the cluster.
 type VTEPManager struct {
-	etcdClient   *etcd.Client
-	logger       *zap.Logger
-	vxlanMgr     *VXLANManager
+	etcdClient *etcd.Client
+	logger     *zap.Logger
+	vxlanMgr   *VXLANManager
 
-	localVTEP    *network.VTEP
-	remoteVTEPs  map[string]*network.VTEP // indexed by node ID
-	vtepsMu      sync.RWMutex
+	localVTEP   *network.VTEP
+	remoteVTEPs map[string]*network.VTEP // indexed by node ID
+	vtepsMu     sync.RWMutex
 
-	ctx          context.Context
-	cancel       context.CancelFunc
-	wg           sync.WaitGroup
+	ctx    context.Context
+	cancel context.CancelFunc
+	wg     sync.WaitGroup
 }
 
 // NewVTEPManager creates a new VTEP manager.

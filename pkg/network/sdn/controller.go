@@ -26,35 +26,35 @@ const (
 
 // Controller is the SDN controller for the hypervisor.
 type Controller struct {
-	config      *network.NetworkConfig
-	logger      *zap.Logger
-	etcdClient  *etcd.Client
+	config     *network.NetworkConfig
+	logger     *zap.Logger
+	etcdClient *etcd.Client
 
 	// Managers
-	vxlanMgr    *overlay.VXLANManager
-	vtepMgr     *overlay.VTEPManager
-	ipam        *ipam.IPAM
-	flowMgr     *FlowManager
+	vxlanMgr *overlay.VXLANManager
+	vtepMgr  *overlay.VTEPManager
+	ipam     *ipam.IPAM
+	flowMgr  *FlowManager
 
 	// Local state
-	networks       map[string]*network.Network
-	networksMu     sync.RWMutex
+	networks   map[string]*network.Network
+	networksMu sync.RWMutex
 
-	ports          map[string]*network.Port
-	portsMu        sync.RWMutex
+	ports   map[string]*network.Port
+	portsMu sync.RWMutex
 
 	securityGroups map[string]*network.SecurityGroup
 	sgMu           sync.RWMutex
 
-	routers        map[string]*network.Router
-	routersMu      sync.RWMutex
+	routers   map[string]*network.Router
+	routersMu sync.RWMutex
 
-	floatingIPs    map[string]*network.FloatingIP
-	fipMu          sync.RWMutex
+	floatingIPs map[string]*network.FloatingIP
+	fipMu       sync.RWMutex
 
-	ctx            context.Context
-	cancel         context.CancelFunc
-	wg             sync.WaitGroup
+	ctx    context.Context
+	cancel context.CancelFunc
+	wg     sync.WaitGroup
 }
 
 // NewController creates a new SDN controller.

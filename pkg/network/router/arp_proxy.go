@@ -13,16 +13,16 @@ import (
 
 // ARPProxy implements distributed ARP proxy for overlay networks.
 type ARPProxy struct {
-	logger     *zap.Logger
-	ovsClient  ARPOVSClient
+	logger    *zap.Logger
+	ovsClient ARPOVSClient
 
 	// MAC address table: IP -> MAC
 	macTable   map[string]string
 	macTableMu sync.RWMutex
 
 	// Subnet to VNI mapping
-	subnetVNI  map[string]uint32
-	subnetMu   sync.RWMutex
+	subnetVNI map[string]uint32
+	subnetMu  sync.RWMutex
 }
 
 // ARPOVSClient defines OVS operations for ARP proxy.

@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	routerKeyPrefix = "/hypervisor/network/routers/"
+	routerKeyPrefix    = "/hypervisor/network/routers/"
 	interfaceKeyPrefix = "/hypervisor/network/router-interfaces/"
 )
 
@@ -55,12 +55,12 @@ type RouterNamespace struct {
 
 // RouterInterface represents a router's connection to a subnet.
 type RouterInterface struct {
-	RouterID  string
-	SubnetID  string
-	PortID    string
-	IPAddress string
+	RouterID   string
+	SubnetID   string
+	PortID     string
+	IPAddress  string
 	MACAddress string
-	VNI       uint32
+	VNI        uint32
 }
 
 // NewDVR creates a new distributed virtual router.

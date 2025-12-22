@@ -14,22 +14,22 @@ import (
 
 // VXLANManager manages VXLAN tunnels and network overlays.
 type VXLANManager struct {
-	config     *network.NetworkConfig
-	logger     *zap.Logger
+	config *network.NetworkConfig
+	logger *zap.Logger
 
 	// Local VTEP information
-	localVTEP  *network.VTEP
+	localVTEP *network.VTEP
 
 	// Active tunnels indexed by remote node ID
-	tunnels    map[string]*network.Tunnel
-	tunnelsMu  sync.RWMutex
+	tunnels   map[string]*network.Tunnel
+	tunnelsMu sync.RWMutex
 
 	// VNI to network mapping
-	vniMap     map[uint32]*network.Network
-	vniMapMu   sync.RWMutex
+	vniMap   map[uint32]*network.Network
+	vniMapMu sync.RWMutex
 
 	// OVS bridge interface
-	ovsClient  OVSClient
+	ovsClient OVSClient
 }
 
 // OVSClient defines the interface for OVS operations.
@@ -145,8 +145,8 @@ func (m *VXLANManager) Initialize(ctx context.Context, nodeID string, localIP ne
 func (m *VXLANManager) setupPatchPorts() error {
 	// Add patch-tun port on br-int
 	if err := m.ovsClient.AddPort(m.config.OVSBridge, "patch-tun", map[string]string{
-		"type":           "patch",
-		"options:peer":   "patch-int",
+		"type":         "patch",
+		"options:peer": "patch-int",
 	}); err != nil {
 		// Ignore error if port already exists
 		m.logger.Debug("patch-tun port may already exist", zap.Error(err))
@@ -154,8 +154,8 @@ func (m *VXLANManager) setupPatchPorts() error {
 
 	// Add patch-int port on br-tun
 	if err := m.ovsClient.AddPort(m.config.OVSTunnelBridge, "patch-int", map[string]string{
-		"type":           "patch",
-		"options:peer":   "patch-tun",
+		"type":         "patch",
+		"options:peer": "patch-tun",
 	}); err != nil {
 		m.logger.Debug("patch-int port may already exist", zap.Error(err))
 	}

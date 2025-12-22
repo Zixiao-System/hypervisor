@@ -11,15 +11,15 @@ import (
 
 // FlowManager manages OpenFlow rules on OVS bridges.
 type FlowManager struct {
-	config     *network.NetworkConfig
-	logger     *zap.Logger
+	config *network.NetworkConfig
+	logger *zap.Logger
 
 	// Active flows indexed by port ID
-	portFlows  map[string][]*network.FlowRule
-	flowsMu    sync.RWMutex
+	portFlows map[string][]*network.FlowRule
+	flowsMu   sync.RWMutex
 
 	// OVS client for flow operations
-	ovsClient  OVSFlowClient
+	ovsClient OVSFlowClient
 }
 
 // OVSFlowClient defines the interface for OVS flow operations.
