@@ -1,0 +1,252 @@
+syntax = "proto3";
+
+package hypervisor.v1;
+
+option go_package = "hypervisor/api/gen/v1;v1";
+
+import "common.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+// ============================================================================
+// Storage Enums
+// ============================================================================
+
+enum VolumeType {
+    VOLUME_TYPE_UNSPECIFIED = 0;
+    VOLUME_TYPE_SSD = 1;
+    VOLUME_TYPE_HDD = 2;
+    VOLUME_TYPE_NVME = 3;
+}
+
+enum VolumeStatus {
+    VOLUME_STATUS_UNSPECIFIED = 0;
+    VOLUME_STATUS_CREATING = 1;
+    VOLUME_STATUS_AVAILABLE = 2;
+    VOLUME_STATUS_IN_USE = 3;
+    VOLUME_STATUS_DELETING = 4;
+    VOLUME_STATUS_ERROR = 5;
+    VOLUME_STATUS_EXTENDING = 6;
+}
+
+enum SnapshotStatus {
+    SNAPSHOT_STATUS_UNSPECIFIED = 0;
+    SNAPSHOT_STATUS_CREATING = 1;
+    SNAPSHOT_STATUS_AVAILABLE = 2;
+    SNAPSHOT_STATUS_DELETING = 3;
+    SNAPSHOT_STATUS_ERROR = 4;
+}
+
+// ============================================================================
+// Storage Messages
+// ============================================================================
+
+message Volume {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    int64 size_bytes = 4;
+    VolumeType type = 5;
+    VolumeStatus status = 6;
+
+    // Attachment info
+    string instance_id = 7;
+    string node_id = 8;
+    string device_path = 9;         // e.g., /dev/vdb
+
+    // Source
+    string source_snapshot_id = 10;
+    string source_volume_id = 11;   // For cloning
+
+    // Multi-tenancy
+    string tenant_id = 12;
+
+    // Metadata
+    Metadata metadata = 13;
+
+    // IOPS and throughput limits
+    int64 iops_limit = 14;
+    int64 throughput_limit = 15;    // bytes per second
+
+    // Encryption
+    bool encrypted = 16;
+    string encryption_key_id = 17;
+
+    // Timestamps
+    google.protobuf.Timestamp created_at = 18;
+    google.protobuf.Timestamp updated_at = 19;
+    google.protobuf.Timestamp attached_at = 20;
+}
+
+message Snapshot {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    string volume_id = 4;
+    int64 size_bytes = 5;
+    SnapshotStatus status = 6;
+
+    // Multi-tenancy
+    string tenant_id = 7;
+
+    // Metadata
+    Metadata metadata = 8;
+
+    // Progress (for creation)
+    int32 progress_percent = 9;
+
+    // Timestamps
+    google.protobuf.Timestamp created_at = 10;
+    google.protobuf.Timestamp updated_at = 11;
+}
+
+// ============================================================================
+// Volume Request/Response Messages
+// ============================================================================
+
+message CreateVolumeRequest {
+    string name = 1;
+    string description = 2;
+    int64 size_bytes = 3;
+    VolumeType type = 4;
+    string tenant_id = 5;
+
+    // Optional: create from snapshot or clone from volume
+    string source_snapshot_id = 6;
+    string source_volume_id = 7;
+
+    // Performance limits
+    int64 iops_limit = 8;
+    int64 throughput_limit = 9;
+
+    // Encryption
+    bool encrypted = 10;
+    string encryption_key_id = 11;
+
+    // Scheduling hints
+    string preferred_node_id = 12;
+    string availability_zone = 13;
+
+    Metadata metadata = 14;
+}
+
+message GetVolumeRequest {
+    string volume_id = 1;
+}
+
+message ListVolumesRequest {
+    string tenant_id = 1;
+    string instance_id = 2;
+    string node_id = 3;
+    VolumeStatus status = 4;
+    map<string, string> label_selector = 5;
+
+    // Pagination
+    int32 page_size = 10;
+    string page_token = 11;
+}
+
+message ListVolumesResponse {
+    repeated Volume volumes = 1;
+    string next_page_token = 2;
+    int32 total_count = 3;
+}
+
+message DeleteVolumeRequest {
+    string volume_id = 1;
+    bool force = 2;  // Force delete even if attached
+}
+
+message AttachVolumeRequest {
+    string volume_id = 1;
+    string instance_id = 2;
+    string device_path = 3;  // Optional: specific device path
+}
+
+message DetachVolumeRequest {
+    string volume_id = 1;
+    bool force = 2;  // Force detach
+}
+
+message ResizeVolumeRequest {
+    string volume_id = 1;
+    int64 new_size_bytes = 2;
+}
+
+message UpdateVolumeRequest {
+    string volume_id = 1;
+    string name = 2;
+    string description = 3;
+    int64 iops_limit = 4;
+    int64 throughput_limit = 5;
+    Metadata metadata = 6;
+}
+
+// ============================================================================
+// Snapshot Request/Response Messages
+// ============================================================================
+
+message CreateSnapshotRequest {
+    string name = 1;
+    string description = 2;
+    string volume_id = 3;
+    string tenant_id = 4;
+    Metadata metadata = 5;
+}
+
+message GetSnapshotRequest {
+    string snapshot_id = 1;
+}
+
+message ListSnapshotsRequest {
+    string tenant_id = 1;
+    string volume_id = 2;
+    SnapshotStatus status = 3;
+    map<string, string> label_selector = 4;
+
+    // Pagination
+    int32 page_size = 10;
+    string page_token = 11;
+}
+
+message ListSnapshotsResponse {
+    repeated Snapshot snapshots = 1;
+    string next_page_token = 2;
+    int32 total_count = 3;
+}
+
+message DeleteSnapshotRequest {
+    string snapshot_id = 1;
+}
+
+message UpdateSnapshotRequest {
+    string snapshot_id = 1;
+    string name = 2;
+    string description = 3;
+    Metadata metadata = 4;
+}
+
+// ============================================================================
+// Storage Service
+// ============================================================================
+
+service StorageService {
+    // Volume lifecycle
+    rpc CreateVolume(CreateVolumeRequest) returns (Volume);
+    rpc GetVolume(GetVolumeRequest) returns (Volume);
+    rpc ListVolumes(ListVolumesRequest) returns (ListVolumesResponse);
+    rpc UpdateVolume(UpdateVolumeRequest) returns (Volume);
+    rpc DeleteVolume(DeleteVolumeRequest) returns (google.protobuf.Empty);
+
+    // Volume operations
+    rpc AttachVolume(AttachVolumeRequest) returns (Volume);
+    rpc DetachVolume(DetachVolumeRequest) returns (Volume);
+    rpc ResizeVolume(ResizeVolumeRequest) returns (Volume);
+
+    // Snapshot lifecycle
+    rpc CreateSnapshot(CreateSnapshotRequest) returns (Snapshot);
+    rpc GetSnapshot(GetSnapshotRequest) returns (Snapshot);
+    rpc ListSnapshots(ListSnapshotsRequest) returns (ListSnapshotsResponse);
+    rpc UpdateSnapshot(UpdateSnapshotRequest) returns (Snapshot);
+    rpc DeleteSnapshot(DeleteSnapshotRequest) returns (google.protobuf.Empty);
+}
